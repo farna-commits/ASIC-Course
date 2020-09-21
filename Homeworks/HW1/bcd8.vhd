@@ -5,8 +5,7 @@ use IEEE.NUMERIC_STD.ALL;
 entity bcd8 is
     port(
        b: in std_logic_vector(7 downto 0);
-       unit, tens: out std_logic_vector(3 downto 0);
-       hundreds: out std_logic_vector(1 downto 0)
+       unit, tens, hundreds: out std_logic_vector(3 downto 0)
     );
  end bcd8;
 
@@ -42,7 +41,7 @@ begin
     c7_in <= c6_out(2 downto 0) & c4_out(3);
 
     --assigning outputs
-    hundreds <= c6_out(3) & c7_out(3);
+    hundreds <= '0' & '0' & c6_out(3) & c7_out(3);
     tens     <= c7_out(2 downto 0) & c5_out(3);
     unit     <= c5_out(2 downto 0) & b(0);
     

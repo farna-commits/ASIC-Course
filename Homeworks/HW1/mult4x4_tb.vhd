@@ -6,6 +6,8 @@ entity mult4x4_tb is
 end mult4x4_tb;
 
 architecture tb_arch of mult4x4_tb is
+
+   --component 
     component mult4x4
        port(
           a, b: in std_logic_vector(3 downto 0);
@@ -13,16 +15,15 @@ architecture tb_arch of mult4x4_tb is
        );
     end component;
 
+    --signals 
     signal test_in1: std_logic_vector(3 downto 0);
     signal test_in2: std_logic_vector(3 downto 0);
     signal test_out: std_logic_vector(7 downto 0);
  
  begin
     -- instantiate the circuit under test
-   uut: mult4x4
-   port map (a => test_in1, b => test_in2, outp => test_out);
+   uut: mult4x4 port map (a => test_in1, b => test_in2, outp => test_out);
 -- test vector generator
-
     process 
     begin
         for i in 0 to (15) loop

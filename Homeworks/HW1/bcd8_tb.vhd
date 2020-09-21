@@ -9,17 +9,16 @@ architecture tb_arch of bcd8_tb is
     component bcd8
        port(
             b: in std_logic_vector(7 downto 0);
-            unit, tens: out std_logic_vector(3 downto 0);
-            hundreds: out std_logic_vector(1 downto 0)
+            unit, tens, hundreds: out std_logic_vector(3 downto 0)
        );
     end component;
 
     signal test_in: std_logic_vector(7 downto 0);
-    signal test_out: std_logic_vector(9 downto 0);
+    signal test_out: std_logic_vector(11 downto 0);
 
 begin 
     --instant
-    uut: bcd8 port map (b => test_in, unit => test_out(3 downto 0), tens => test_out(7 downto 4), hundreds => test_out(9 downto 8));
+    uut: bcd8 port map (b => test_in, unit => test_out(3 downto 0), tens => test_out(7 downto 4), hundreds => test_out(11 downto 8));
 
     --test vector generator 
     process begin 
@@ -44,7 +43,7 @@ begin
         hundreds := (to_integer(unsigned(test_in)) / 100) mod 10;
         
         --check if algorithm's answer same to the RTL approach
-        if ( (unit = to_integer(unsigned(test_out(3 downto 0)))) and (tens = to_integer(unsigned(test_out(7 downto 4)))) and (hundreds = to_integer(unsigned(test_out(9 downto 8)))) )
+        if ( (unit = to_integer(unsigned(test_out(3 downto 0)))) and (tens = to_integer(unsigned(test_out(7 downto 4)))) and (hundreds = to_integer(unsigned(test_out(11 downto 8)))) )
         then
             test_pass := true;
         else
@@ -57,7 +56,3 @@ begin
 
     end process;
 end tb_arch;
-
-
--- report "The value of 'units' is " & integer'image(hundreds);
--- report "The value of 'outp unit' is " & integer'image(to_integer(unsigned(test_out(9 downto 8))));

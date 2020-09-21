@@ -12,7 +12,5 @@ end entity mult4x4;
 
 architecture Behavioral of mult4x4 is
 begin
-
     outp <= std_logic_vector(unsigned(a) * unsigned(b));
-
 end architecture Behavioral; 
