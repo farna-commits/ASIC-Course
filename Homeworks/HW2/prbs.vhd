@@ -15,13 +15,8 @@ end prbs;
 architecture prbs_arch of prbs is
     --internal signals 
     signal dataIn_reg, dataOut_reg: std_logic;  --signals for input and output port (for protecting input and output)
-<<<<<<< HEAD
     signal seed_reg: std_logic_vector(SEED_WIDTH-1 downto 0);   --seeding signal
     signal xor_1: std_logic;    --xoring signal 
-=======
-    signal seed_reg: std_logic_vector(SEED_WIDTH-1 downto 0);
-    signal xor_1: std_logic;
->>>>>>> 18b04d71a49b5208a7e3157abb9333878085c28c
 begin
     
     --continuous assignments
@@ -32,11 +27,7 @@ begin
 
     process (clk, reset) begin 
         --initialize 
-<<<<<<< HEAD
         if (reset = '0') then --my reset is active low
-=======
-        if (reset = '0') then 
->>>>>>> 18b04d71a49b5208a7e3157abb9333878085c28c
             seed_reg <= (others => '0');    --init with zeros 
         elsif (rising_edge(clk)) then 
         -- if reset is high then operate, but check enable and load first 
