@@ -9,19 +9,19 @@ end prbs_verify_tb;
 architecture tb_arch of prbs_verify_tb is
     component prbs_verify
        port(
-            clk, reset, en, load: in std_logic; 
-            pass: out std_logic
+            clk, reset, en, load    : in  std_logic; 
+            pass                    : out std_logic
        );
     end component;
 
     --constants 
-    constant CLK_HALF_PERIOD: Time := 25 ns; 
-    constant CLK_PERIOD: Time := 2 * CLK_HALF_PERIOD;    
+    constant CLK_HALF_PERIOD    : Time := 25 ns; 
+    constant CLK_PERIOD         : Time := 2 * CLK_HALF_PERIOD;    
     
     --signals 
-    signal clk: std_logic := '0';   --start clk with 0 
-    signal reset, en, load: std_logic;
-    signal test_pass_out: std_logic; 
+    signal clk              : std_logic := '0';   --start clk with 0 
+    signal reset, en, load  : std_logic;
+    signal test_pass_out    : std_logic; 
 
 
 begin 
@@ -35,9 +35,9 @@ begin
 
     --setting control signals 
     process begin 
-        reset <= '0'; 
-        wait for CLK_HALF_PERIOD + 5 ns; 
         reset <= '1'; 
+        wait for CLK_HALF_PERIOD + 5 ns; 
+        reset <= '0'; 
         load <= '1'; 
         wait for CLK_PERIOD; 
         load <= '0'; 
