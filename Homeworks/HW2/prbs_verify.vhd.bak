@@ -93,8 +93,6 @@ begin
         if (reset = '1') then 
             counter2 <= "1011111"; 
             flag <= '0';
-            pass_signal <= '1';
-            
         elsif (rising_edge(clk_signal)) then --check on en_signal as it is asserted when first input is given
             if (load_signal = '0' and counter2 > "0000000" and counter2 <= "1011111" and en_signal = '1') then
                 if ((data_out_before_verify = temp1) and (flag = '0')) then --if there are no mismatches 

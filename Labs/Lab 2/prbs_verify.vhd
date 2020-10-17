@@ -38,8 +38,8 @@ architecture prbs_verify_arch of prbs_verify is
     signal seed_in_signal                                       : std_logic_vector(SEED_WIDTH-1 downto 0); --output of seed_rom
     signal data_in_signal                                       : std_logic_vector(INOUT_SIZE-1 downto 0); --output of in_data_rom 
     signal data_in_signal_bit                                   : std_logic; --1 bit of the rom as input to prbs module is 1 bit only 
-    signal flag                                                 : std_logic := '0'; --flag for verification 
-    signal counter, counter2                                    : unsigned(6 downto 0) := "1011111"; --indecies for ROMs to access individual bits 
+    signal flag                                                 : std_logic; --flag for verification 
+    signal counter, counter2                                    : unsigned(6 downto 0); --indecies for ROMs to access individual bits 
     signal temp1                                                : std_logic; 
     signal en_signal                                            : std_logic;    -- this is the enable of prbs module, if the enable of the top module is 1, set this as 1
                                                                                 -- that is done in order to have the first input and the first enable come in sync
@@ -68,28 +68,45 @@ begin
 
     
     --take input into module 
-    process (clk_signal) begin 
-        if (load_signal = '0' and rising_edge(clk_signal) and counter >= 0 and en = '1') then 
-            en_signal <= '1';
-            data_in_signal_bit <= data_in_signal(to_integer(counter)); --take 1 bit from rom 
-            counter <= counter - 1; 
+    process (clk_signal, reset) begin 
+        if (reset = '1') then 
+            counter <= "1011111";
+        
+        elsif (rising_edge(clk_signal)) then 
+            if (load_signal = '0' and counter > "0000000" and counter <= "1011111" and en = '1') then 
+                en_signal <= '1';
+                data_in_signal_bit <= data_in_signal(to_integer(counter)); --take 1 bit from rom 
+                counter <= counter - 1; 
+            elsif (load_signal = '0' and counter = "0000000" and en = '1') then 
+                en_signal <= '1';
+                data_in_signal_bit <= data_in_signal(to_integer(counter)); --take 1 bit from rom 
+            end if; 
         end if; 
+        
     end process;
 
     --extracting bit by bit from output rom
     temp1 <= out_data_rom(to_integer(counter2));
 
     --verify logic
-    process (clk_signal) begin 
-        if (load_signal = '0' and rising_edge(clk_signal) and counter2 >= 0 and en_signal = '1') then --check on en_signal as it is asserted when first input is given
-            if (data_out_before_verify = temp1) and (flag = '0') then --if there are no mismatches 
-                pass_signal <= '1'; --make the pass as 1 until one mismatch occures
-                counter2 <= counter2 - 1; 
-            else --a mismatch occured 
-                flag <= '1'; 
-                pass_signal <= '0'; --show that there was a mismatch 
-            end if;
+    process (clk_signal, reset) begin 
+        if (reset = '1') then 
+            counter2 <= "1011111"; 
+            flag <= '0';
+            pass_signal <= '1';
+            
+        elsif (rising_edge(clk_signal)) then --check on en_signal as it is asserted when first input is given
+            if (load_signal = '0' and counter2 > "0000000" and counter2 <= "1011111" and en_signal = '1') then
+                if ((data_out_before_verify = temp1) and (flag = '0')) then --if there are no mismatches 
+                    pass_signal <= '1'; --make the pass as 1 until one mismatch occures
+                    counter2 <= counter2 - 1; 
+                else --a mismatch occured 
+                    flag <= '1'; 
+                    pass_signal <= '0'; --show that there was a mismatch 
+                end if;
+            end if; 
         end if; 
     end process; 
+
 
 end prbs_verify_arch; 
