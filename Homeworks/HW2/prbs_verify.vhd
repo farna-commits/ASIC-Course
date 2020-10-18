@@ -25,12 +25,12 @@ architecture prbs_verify_arch of prbs_verify is
 
     --constants 
     constant SEED_WIDTH : integer := 15; 
-    constant INOUT_SIZE : integer := 96; 
+    signal INOUT_SIZE : integer := 96; 
 
     --ROMs 
-    constant seed_rom       :  std_logic_vector(SEED_WIDTH-1 downto 0)  := "101010001110110"; 
-    constant in_data_rom    :  std_logic_vector(INOUT_SIZE-1 downto 0)  := x"ACBCD2114DAE1577C6DBF4C9"; 
-    constant out_data_rom   :  std_logic_vector(INOUT_SIZE-1 downto 0)  := x"558AC4A53A1724E163AC2BF9";
+    signal seed_rom       :  std_logic_vector(SEED_WIDTH-1 downto 0)  := "101010001110110"; 
+    signal in_data_rom    :  std_logic_vector(INOUT_SIZE-1 downto 0)  := x"ACBCD2114DAE1577C6DBF4C9"; 
+    signal out_data_rom   :  std_logic_vector(INOUT_SIZE-1 downto 0)  := x"558AC4A53A1724E163AC2BF9";
 
     --signals 
     signal clk_signal, reset_signal, load_signal, pass_signal   : std_logic; --protection for inputs and outputs 

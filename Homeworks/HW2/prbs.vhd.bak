@@ -17,7 +17,6 @@ architecture prbs_arch of prbs is
     signal dataIn_reg, dataOut_reg  : std_logic;  --signals for input and output port (for protecting input and output)
     signal seed_reg                 : std_logic_vector(SEED_WIDTH-1 downto 0);   --seeding signal
     signal xor_1                    : std_logic;    --xoring signal 
-    signal seed_reg2                : std_logic_vector(SEED_WIDTH-1 downto 0);   --seeding signal
 begin
     
     --continuous assignments
@@ -33,12 +32,11 @@ begin
         elsif (rising_edge(clk)) then 
         -- if reset is high then operate, but check enable and load first 
             if(load = '1') then
-                seed_reg <= seed_reg2;    --initialize the seed reg with input seed
+                seed_reg <= seed_in;    --initialize the seed reg with input seed
             elsif(en = '1') then
                 seed_reg <= seed_reg(SEED_WIDTH-2 downto 0) & xor_1;    --shift left by 1 and xor with xoring result of last 2 bits
             end if;
         end if;
     end process; 
 
-    seed_reg2 <= seed_in; 
 end prbs_arch;
