@@ -61,7 +61,7 @@ begin
 
     --instant 
     prbs1: prbs generic map(SEED_WIDTH => SEED_WIDTH)
-                port map(clk => clk_signal, reset => reset_signal, en => en_signal, load => load_signal,
+                port map(clk => clk_signal, reset => reset_signal, en => en, load => load_signal,
                          seed_in => seed_in_signal,
                          dataIn => data_in_signal_bit, dataOut => data_out_before_verify); 
 
@@ -74,17 +74,17 @@ begin
         
         elsif (rising_edge(clk_signal)) then 
             if (load_signal = '0' and counter > "0000000" and counter <= "1011111" and en = '1') then 
-                en_signal <= '1';
-                data_in_signal_bit <= data_in_signal(to_integer(counter)); --take 1 bit from rom 
+                --en_signal <= '1';
                 counter <= counter - 1; 
-            elsif (load_signal = '0' and counter = "0000000" and en = '1') then 
-                en_signal <= '1';
-                data_in_signal_bit <= data_in_signal(to_integer(counter)); --take 1 bit from rom 
+            -- elsif (load_signal = '0' and counter = "0000000" and en = '1') then 
+            --     en_signal <= '1';
+            --     data_in_signal_bit <= data_in_signal(to_integer(counter)); --take 1 bit from rom 
             end if; 
         end if; 
         
     end process;
 
+    data_in_signal_bit <= data_in_signal(to_integer(counter)); --take 1 bit from rom 
     --extracting bit by bit from output rom
     temp1 <= out_data_rom(to_integer(counter2));
 
@@ -93,10 +93,10 @@ begin
         if (reset = '1') then 
             counter2 <= "1011111"; 
             flag <= '0';
-            pass_signal <= '1';
+            pass_signal <= '0';
             
         elsif (rising_edge(clk_signal)) then --check on en_signal as it is asserted when first input is given
-            if (load_signal = '0' and counter2 > "0000000" and counter2 <= "1011111" and en_signal = '1') then
+            if (load_signal = '0' and counter2 > "0000000" and counter2 <= "1011111" and en = '1') then
                 if ((data_out_before_verify = temp1) and (flag = '0')) then --if there are no mismatches 
                     pass_signal <= '1'; --make the pass as 1 until one mismatch occures
                     counter2 <= counter2 - 1; 

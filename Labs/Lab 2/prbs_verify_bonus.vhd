@@ -4,7 +4,8 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity prbs_verify is 
     port(
-        clk, reset, en, load    : in  std_logic; 
+        --clk, reset, en, load    : in  std_logic; 
+		clk						: in  std_logic;
         pass                    : out std_logic
     );
 end prbs_verify;
@@ -22,15 +23,24 @@ architecture prbs_verify_arch of prbs_verify is
             dataOut                 : out std_logic
        );
     end component;
+	 
+	 --jtag component 
+	 component jtag_system is
+		port (
+			source : out std_logic_vector(2 downto 0);                    -- source
+			probe  : in  std_logic_vector(9 downto 0) := (others => 'X')  -- probe
+		);
+	end component jtag_system;
+	 
 
     --constants 
     constant SEED_WIDTH : integer := 15; 
-    signal INOUT_SIZE : integer := 96; 
+    constant INOUT_SIZE : integer := 96; 
 
     --ROMs 
-    signal seed_rom       :  std_logic_vector(SEED_WIDTH-1 downto 0)  := "101010001110110"; 
-    signal in_data_rom    :  std_logic_vector(INOUT_SIZE-1 downto 0)  := x"ACBCD2114DAE1577C6DBF4C9"; 
-    signal out_data_rom   :  std_logic_vector(INOUT_SIZE-1 downto 0)  := x"558AC4A53A1724E163AC2BF9";
+    constant seed_rom       :  std_logic_vector(SEED_WIDTH-1 downto 0)  := "101010001110110"; 
+    constant in_data_rom    :  std_logic_vector(INOUT_SIZE-1 downto 0)  := x"ACBCD2114DAE1577C6DBF4C9"; 
+    constant out_data_rom   :  std_logic_vector(INOUT_SIZE-1 downto 0)  := x"558AC4A53A1724E163AC2BF9";
 
     --signals 
     signal clk_signal, reset_signal, load_signal, pass_signal   : std_logic; --protection for inputs and outputs 
@@ -46,7 +56,11 @@ architecture prbs_verify_arch of prbs_verify is
                                                                                 -- because if they arent in sync, first input will come with the 2nd seed value not the initial one
                                                                                 -- so a solution would be initializing the seed with another value so that when its shifted it gives OUR initial
                                                                                 -- one, or have a hidden enable that enables the small module when the global enable is asserted. 
-    
+    --signals of sources 
+    signal reset, en, load  : std_logic; 
+    signal sources_concat   : std_logic_vector(2 downto 0);
+    signal probes_concat    : std_logic_vector(9 downto 0);
+    -- signal success          : std_logic; 
 
 begin 
 
@@ -66,6 +80,16 @@ begin
                          dataIn => data_in_signal_bit, dataOut => data_out_before_verify); 
 
 
+    u0: component jtag_system port map (source => sources_concat, probe => probes_concat);
+
+    reset <= sources_concat(0); 
+    load  <= sources_concat(1);
+    en    <= sources_concat(2);
+
+    probes_concat(0) <= pass_signal; 
+    probes_concat(1) <= data_in_signal_bit;
+    probes_concat(2) <= data_out_before_verify; 
+    probes_concat(9 downto 3) <= std_logic_vector(counter); 
     
     --take input into module 
     process (clk_signal, reset) begin 
@@ -94,7 +118,6 @@ begin
             counter2 <= "1011111"; 
             flag <= '0';
             pass_signal <= '1';
-            
         elsif (rising_edge(clk_signal)) then --check on en_signal as it is asserted when first input is given
             if (load_signal = '0' and counter2 > "0000000" and counter2 <= "1011111" and en_signal = '1') then
                 if ((data_out_before_verify = temp1) and (flag = '0')) then --if there are no mismatches 
@@ -107,6 +130,5 @@ begin
             end if; 
         end if; 
     end process; 
-
 
 end prbs_verify_arch; 
