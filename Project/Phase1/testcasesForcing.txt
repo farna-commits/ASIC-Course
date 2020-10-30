@@ -37,7 +37,18 @@ run
 
 
 -------------------------------------
+FEC ENCODER
 
+force -freeze sim:/fec_encoder/clk_50mhz 1 0, 0 {10 ns} -r 20
+force -freeze sim:/fec_encoder/clk_100mhz 1 0, 0 {5 ns} -r 10
+force -freeze sim:/fec_encoder/reset 1 0
+force -freeze sim:/fec_encoder/rand_out_valid 0 0
+force -freeze sim:/fec_encoder/tail_bits_in 6'b100111 0
+force -freeze sim:/fec_encoder/data_in 0 0
+run
+force -freeze sim:/fec_encoder/reset 0 0
+force -freeze sim:/fec_encoder/rand_out_valid 1 0
+run
 
 -------------------------------------
 
