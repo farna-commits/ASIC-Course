@@ -16,59 +16,109 @@ end modulation;
 architecture modulation_arch of modulation is
 
     --signals 
-    signal data_in_reg  : std_logic_vector(1 downto 0);
-    signal counter1     : unsigned(1 downto 0); 
-    signal done_flag    : std_logic; 
+    signal data_in_reg              : std_logic_vector(1 downto 0);
+    signal counter1                 : unsigned(1 downto 0); 
+    signal done_flag                : std_logic; 
+    signal counter_buffer_input     : unsigned(7 downto 0); 
+    signal counter_buffer_input2    : unsigned(7 downto 0); 
+    signal data_in_buffer           : std_logic_vector(191 downto 0);
     
 begin
 
+
+    --buffer all input into a register of 192 elements 
     process (clk_100mhz, reset) begin 
-        if (reset = '1') then  
-            counter1                <= "00";
+        if (reset = '1') then 
+            counter_buffer_input    <= (others => '0');
         elsif (rising_edge(clk_100mhz)) then 
             if (interleaver_out_valid = '1') then 
-                if (counter1 < 2) then 
-                    data_in_reg(to_integer(counter1))   <= data_in; 
-                    counter1                            <= counter1 + 1;
-                else 
-                    if (done_flag = '1') then 
-                        counter1                            <= "00"; 
-                    end if; 
-                end if; 
-            end if; 
-        end if; 
-    end process;
-
-    process (counter1) begin 
-        if (reset = '1') then 
-            output1                 <= (others => '0'); 
-            output2                 <= (others => '0');
-            modulation_out_valid    <= '0'; 
-            done_flag               <= '0';
-        else 
-            done_flag <= '0';
-            if (counter1 = 2) then 
-                for i in 0 to 1 loop
-                    if (i = 0) then  
-                        if (data_in_reg(i) = '0') then
-                            output1                 <= "0101101001111111"; --   0.707 in Q15 format 
-                            modulation_out_valid    <= '1'; 
-                        else 
-                            output1                 <= "1010010110000001";  -- -0.707 in Q15 format 
-                            modulation_out_valid    <= '1'; 
-                        end if;
-                    else 
-                        if (data_in_reg(i) = '0') then
-                            output2     <= "0101101001111111"; --   0.707 in Q15 format  
-                            done_flag   <= '1';
-                        else 
-                            output2     <= "1010010110000001"; --   -0.707 in Q15 format 
-                            done_flag   <= '1';
-                        end if;                
-                    end if;
-                end loop;
-            end if; 
+                if (counter_buffer_input < 192) then 
+                    data_in_buffer(to_integer(counter_buffer_input))    <= data_in; 
+                    counter_buffer_input                                <= counter_buffer_input + 1; 
+                end if;
+            end if;
         end if;
     end process; 
+
+    --start modulation after buffer is full 
+    process (clk_100mhz, reset, counter_buffer_input) begin 
+        if (reset = '1') then 
+            counter_buffer_input2   <= (others => '0');
+        elsif (rising_edge(clk_100mhz)) then 
+            if (interleaver_out_valid = '1') then 
+                if (counter_buffer_input = 192) then 
+                    for i in 0 to 1 loop
+                        if (i = 0) then 
+                            if (data_in_buffer(i + to_integer(counter_buffer_input2)) = '0') then
+                                output1                 <= "0101101001111111"; --   0.707 in Q15 format 
+                                modulation_out_valid    <= '1'; 
+                            else
+                                output1                 <= "1010010110000001";  -- -0.707 in Q15 format 
+                                modulation_out_valid    <= '1'; 
+                            end if;
+                        else 
+                            if (data_in_buffer(i + to_integer(counter_buffer_input2)) = '0') then
+                                output2                 <= "0101101001111111"; --   0.707 in Q15 format 
+                            else
+                                output2                 <= "1010010110000001";  -- -0.707 in Q15 format 
+                            end if;
+                        end if;
+                    end loop;
+                if (counter_buffer_input2 < 192) then
+                    counter_buffer_input2   <= counter_buffer_input2 + 2; 
+                end if;
+                end if;
+            end if;
+        end if;        
+    end process;
+
+    -- process (clk_100mhz, reset) begin 
+    --     if (reset = '1') then  
+    --         counter1                <= "00";
+    --     elsif (rising_edge(clk_100mhz)) then 
+    --         if (interleaver_out_valid = '1') then 
+    --             if (counter1 < 2) then 
+    --                 data_in_reg(to_integer(counter1))   <= data_in; 
+    --                 counter1                            <= counter1 + 1;
+    --             else 
+    --                 -- if (done_flag = '1') then 
+    --                     counter1                            <= "00"; 
+    --                 -- end if; 
+    --             end if; 
+    --         end if; 
+    --     end if; 
+    -- end process;
+
+    -- process (counter1) begin 
+    --     if (reset = '1') then 
+    --         output1                 <= (others => '0'); 
+    --         output2                 <= (others => '0');
+    --         modulation_out_valid    <= '0'; 
+    --         done_flag               <= '0';
+    --     else 
+    --         done_flag <= '0';
+    --         if (counter1 = 1) then 
+    --             for i in 0 to 1 loop
+    --                 if (i = 0) then  
+    --                     if (data_in_reg(i) = '0') then
+    --                         output1                 <= "0101101001111111"; --   0.707 in Q15 format 
+    --                         modulation_out_valid    <= '1'; 
+    --                     else 
+    --                         output1                 <= "1010010110000001";  -- -0.707 in Q15 format 
+    --                         modulation_out_valid    <= '1'; 
+    --                     end if;
+    --                 else 
+    --                     if (data_in_reg(i) = '0') then
+    --                         output2     <= "0101101001111111"; --   0.707 in Q15 format  
+    --                         done_flag   <= '1';
+    --                     else 
+    --                         output2     <= "1010010110000001"; --   -0.707 in Q15 format 
+    --                         done_flag   <= '1';
+    --                     end if;                
+    --                 end if;
+    --             end loop;
+    --         end if; 
+    --     end if;
+    -- end process; 
 
 end modulation_arch; 
