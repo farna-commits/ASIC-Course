@@ -4,29 +4,29 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity FEC_encoder is 
     port(
-        clk_50mhz, clk_100mhz               : in    std_logic; 
-        reset, rand_out_valid               : in    std_logic; 
-        tail_bits_in                        : in    std_logic_vector(5 downto 0); 
-        data_in                             : in    std_logic; 
-        x_output, y_output                  : out   std_logic; 
-        FEC_encoder_out_valid               : out   std_logic; 
-        data_out                            : out   std_logic
+        clk_50mhz, clk_100mhz                 : in    std_logic; 
+        reset, rand_out_valid                 : in    std_logic; 
+        tail_bits_in                          : in    std_logic_vector(5 downto 0); 
+        data_in                               : in    std_logic; 
+        x_output, y_output                    : out   std_logic; 
+        FEC_encoder_out_valid                 : out   std_logic; 
+        data_out                              : out   std_logic
 
     );
 end FEC_encoder;
 
 architecture FEC_encoder_arch of FEC_encoder is
     --constant 
-    constant BUFFER_SIZE                    : integer := 12; 
+    constant BUFFER_SIZE                      : integer := 12; 
     --signals 
-    signal g1                               : std_logic_vector(5 downto 0); 
-    signal x_output_signal, y_output_signal : std_logic; 
-    signal flag                             : std_logic; 
-    signal counter                          : unsigned(6 downto 0);
-    signal counter2                         : unsigned(6 downto 0);
-    signal finished_buffering_flag          : std_logic;
-    signal finished_outputting_flag         : std_logic;
-    signal data_in_buffer                   : std_logic_vector(BUFFER_SIZE-1 downto 0);
+    signal   g1                               : std_logic_vector(5 downto 0); 
+    signal   x_output_signal, y_output_signal : std_logic; 
+    signal   flag                             : std_logic; 
+    signal   counter                          : unsigned(6 downto 0);
+    signal   counter2                         : unsigned(6 downto 0);
+    signal   finished_buffering_flag          : std_logic;
+    signal   finished_outputting_flag         : std_logic;
+    signal   data_in_buffer                   : std_logic_vector(BUFFER_SIZE-1 downto 0);
 
     
 begin
@@ -95,13 +95,15 @@ begin
             FEC_encoder_out_valid   <= '0';
         elsif(rising_edge(clk_100mhz)) then 
             if (rand_out_valid = '1') then 
-                if (flag = '1') then 
-                    x_output_signal         <= data_in_buffer(to_integer(counter2)) xor g1(0) xor g1(3) xor g1(4) xor g1(5);
-                    flag                    <= '0'; 
-                    FEC_encoder_out_valid   <= '1'; 
-                else 
-                    y_output_signal         <= data_in_buffer(to_integer(counter2)) xor g1(0) xor g1(1) xor g1(3) xor g1(4);  
-                    flag                    <= '1';
+                if (counter2 < BUFFER_SIZE) then 
+                    if (flag = '1') then 
+                        x_output_signal         <= data_in_buffer(to_integer(counter2)) xor g1(0) xor g1(3) xor g1(4) xor g1(5);
+                        flag                    <= '0'; 
+                        FEC_encoder_out_valid   <= '1'; 
+                    else 
+                        y_output_signal         <= data_in_buffer(to_integer(counter2)) xor g1(0) xor g1(1) xor g1(3) xor g1(4);  
+                        flag                    <= '1';
+                    end if; 
                 end if; 
             end if; 
         end if;
