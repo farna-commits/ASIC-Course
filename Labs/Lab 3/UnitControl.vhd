@@ -31,8 +31,8 @@ architecture UnitControl_arch of UnitControl is
     signal  door_open_counter_next                       : unsigned(NUMBER_OF_SECONDS_DOOR_BITS-1 downto 0);
     signal  floor_to_floor_counter_next                  : unsigned(NUMBER_OF_SECONDS_FLOOR_BITS-1 downto 0);
 
-    --Constants
-    constant CLK_DIV_COUNTER_MAX                         : unsigned(27 downto 0):= "0000000000000000000000000101"; --this is 5, replace by 50M here (0010111110101111000010000000)
+    --Constants 																						0010111110101111000010000000
+    constant CLK_DIV_COUNTER_MAX                         : unsigned(27 downto 0):= "0010111110101111000010000000"; --this is 5, replace by 50M here (0010111110101111000010000000)
     constant DOOR_OPEN_COUNTER_MAX                       : unsigned(NUMBER_OF_SECONDS_DOOR_BITS-1 downto 0):= "011";    -- door opens and closes in 3s
     constant FLOOR_TO_FLOOR_COUNTER_MAX                  : unsigned(NUMBER_OF_SECONDS_FLOOR_BITS-1 downto 0):= "010";   -- time between 2 floors is 2s
 begin
