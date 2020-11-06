@@ -24,21 +24,25 @@ architecture states_FEC_encoder_arch of states_FEC_encoder is
     signal   flag                             : std_logic; 
     signal   counter_buffer_input             : integer; 
     signal   counter_shift_and_output         : integer; 
-    signal   finished_buffering_flag          : std_logic;
+	signal   finished_buffering_flag          : std_logic;
+	signal   finished_tailbitting_flag        : std_logic;
     signal   finished_outputting_flag         : std_logic;
     signal   data_in_buffer                   : std_logic_vector(BUFFER_SIZE-1 downto 0);
 
     --state machines 
     type input_state_type is (idle, buffer_input, get_tail_bits, shifting); 
     signal input_state_reg, input_state_next    : input_state_type; 
+    type output_state_type is (idle, x, y); 
+    signal output_state_reg, output_state_next  : output_state_type; 
     
 begin
 
     --contineous 
     x_output    <= x_output_signal; 
     y_output    <= y_output_signal; 
-    data_out    <= x_output_signal when (flag = '1') else y_output_signal;
+    data_out    <= x_output_signal when (output_state_reg = x) else y_output_signal;
 
+    ----------------------------------------------------------------------------------State Machine of Inputting and Tail bits-----------------------------------------------------------------------------------
     --state1 register
     process (clk_50mhz, reset) begin 
         if (reset = '1') then 
@@ -56,13 +60,15 @@ begin
             shift_reg                   <= (others => '0');
             counter_shift_and_output    <= 0;
             finished_buffering_flag     <= '0';
-            finished_outputting_flag    <= '0';
+			finished_outputting_flag    <= '0';
+			finished_tailbitting_flag	<= '0';
         elsif (rising_edge(clk_50mhz)) then 
             case input_state_reg is 
                 when idle => 
                     if (rand_out_valid = '1') then 
                         if (finished_outputting_flag = '1') then 
-                            finished_buffering_flag <= '0';
+							finished_buffering_flag 	<= '0';
+							finished_tailbitting_flag	<= '0';
                         end if;
                         input_state_next    <= buffer_input; 
                     else 
@@ -81,8 +87,9 @@ begin
                         finished_buffering_flag              <= '1'; 
                     end if;
                 when get_tail_bits => 
-                    shift_reg           <= data_in_buffer(BUFFER_SIZE-6) & data_in_buffer(BUFFER_SIZE-5) & data_in_buffer(BUFFER_SIZE-4) & data_in_buffer(BUFFER_SIZE-3) & data_in_buffer(BUFFER_SIZE-2) & data_in_buffer(BUFFER_SIZE-1); --take tail bits as last 6 bits from buffer
-                    input_state_next    <= shifting; 
+                    shift_reg           		<= data_in_buffer(BUFFER_SIZE-6) & data_in_buffer(BUFFER_SIZE-5) & data_in_buffer(BUFFER_SIZE-4) & data_in_buffer(BUFFER_SIZE-3) & data_in_buffer(BUFFER_SIZE-2) & data_in_buffer(BUFFER_SIZE-1); --take tail bits as last 6 bits from buffer
+					input_state_next    		<= shifting; 
+					finished_tailbitting_flag	<= '1'; 
                 when shifting => 
                     if (finished_buffering_flag = '1') then 
                         if (counter_shift_and_output < BUFFER_SIZE) then 
@@ -99,27 +106,67 @@ begin
             end case;
         end if;
     end process;
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------State Machine of outputs----------------------------------------------------------------------------------
 
-    --produce outputs 
+    --state2 register
     process (clk_100mhz, reset) begin 
-    if (reset = '1') then 
-        flag                    <= '1'; 
-        x_output_signal         <= '0';
-        y_output_signal         <= '0';
-        FEC_encoder_out_valid   <= '0';
-    elsif(rising_edge(clk_100mhz)) then 
-        if (rand_out_valid = '1') then 
-            if (counter_shift_and_output < BUFFER_SIZE) then 
-                if (flag = '1') then 
-                    x_output_signal         <= data_in_buffer(counter_shift_and_output) xor shift_reg(0) xor shift_reg(3) xor shift_reg(4) xor shift_reg(5);
-                    flag                    <= '0'; 
-                    FEC_encoder_out_valid   <= '1'; 
-                else 
-                    y_output_signal         <= data_in_buffer(counter_shift_and_output) xor shift_reg(0) xor shift_reg(1) xor shift_reg(3) xor shift_reg(4);  
-                    flag                    <= '1';
-                end if; 
-            end if; 
-        end if; 
-    end if;
-end process; 
+        if (reset = '1') then 
+            output_state_reg <= idle; 
+        elsif (rising_edge(clk_100mhz)) then 
+            output_state_reg <= output_state_next; 
+        end if;
+    end process;
+
+    --state2 next state logic
+    process (clk_100mhz, reset, output_state_reg, counter_shift_and_output, finished_buffering_flag) begin 
+        if (reset = '1') then 
+			flag                    <= '1'; 
+			x_output_signal         <= '0';
+			y_output_signal         <= '0';
+			FEC_encoder_out_valid   <= '0';
+		elsif(rising_edge(clk_100mhz)) then 
+			if (finished_tailbitting_flag = '1') then
+				case output_state_reg is 
+					when idle => 
+						if (counter_shift_and_output < BUFFER_SIZE) then 
+							output_state_next	<= x; 
+						else 
+							output_state_next	<= idle;
+						end if; 
+					when x => 
+						x_output_signal         <= data_in_buffer(counter_shift_and_output) xor shift_reg(0) xor shift_reg(3) xor shift_reg(4) xor shift_reg(5);
+						FEC_encoder_out_valid   <= '1'; 
+						output_state_next		<= y;
+					when y => 
+						y_output_signal         <= data_in_buffer(counter_shift_and_output) xor shift_reg(0) xor shift_reg(1) xor shift_reg(3) xor shift_reg(4);
+						output_state_next		<= idle;
+				end case;
+			end if; 
+        end if;
+    end process; 
+
+--     --produce outputs 
+--     process (clk_100mhz, reset) begin 
+--     if (reset = '1') then 
+--         flag                    <= '1'; 
+--         x_output_signal         <= '0';
+--         y_output_signal         <= '0';
+--         FEC_encoder_out_valid   <= '0';
+--     elsif(rising_edge(clk_100mhz)) then 
+--         if (rand_out_valid = '1') then 
+--             if (counter_shift_and_output < BUFFER_SIZE) then 
+--                 if (flag = '1') then 
+--                     x_output_signal         <= data_in_buffer(counter_shift_and_output) xor shift_reg(0) xor shift_reg(3) xor shift_reg(4) xor shift_reg(5);
+--                     flag                    <= '0'; 
+--                     FEC_encoder_out_valid   <= '1'; 
+--                 else 
+--                     y_output_signal         <= data_in_buffer(counter_shift_and_output) xor shift_reg(0) xor shift_reg(1) xor shift_reg(3) xor shift_reg(4);  
+--                     flag                    <= '1';
+--                 end if; 
+--             end if; 
+--         end if; 
+--     end if;
+-- end process; 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 end states_FEC_encoder_arch; 
