@@ -34,7 +34,7 @@ begin
     --contineous 
     x_output    <= x_output_signal; 
     y_output    <= y_output_signal; 
-    data_out    <= x_output_signal when (flag = '1') else y_output_signal;
+    data_out    <= x_output_signal when (flag = '0') else y_output_signal;
 
     --buffer input from randomizer 
     process (clk_50mhz, reset) begin 
