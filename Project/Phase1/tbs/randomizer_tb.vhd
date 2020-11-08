@@ -61,6 +61,7 @@ begin
             test_dataIn <= input_vector(i); 
             wait for CLK_PERIOD;                 --to take next input after next pos edge 
         end loop; 
+        en  <= '0';
         wait; --makes process executes once 
     end process;
 
