@@ -91,8 +91,8 @@ begin
                             finished_outputting_flag    <= '0';
                         elsif (counter_shift_and_output = 95) then 
                             input_state_reg            	<= idle;
-                            counter_shift_and_output    <= 0;
-							finished_outputting_flag    <= '1';
+                            -- counter_shift_and_output    <= 0;
+                            finished_outputting_flag    <= '1';                            
 							finished_buffering_flag		<= '0';
                         end if;
                     end if;
@@ -112,7 +112,10 @@ begin
 		FEC_encoder_out_valid	<= '0';
 		flag					<= '1'; 
 	elsif(rising_edge(clk_100mhz)) then 
-		if (finished_tail_flag = '1') then
+        if (finished_tail_flag = '1') then
+            if (counter_shift_and_output = 95) then 
+                FEC_encoder_out_valid   <= '0';
+            end if;
 			case output_state_reg is 
 				when idle => 
 					if (counter_shift_and_output = 0) then 
