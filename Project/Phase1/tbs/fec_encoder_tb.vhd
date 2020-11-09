@@ -35,6 +35,7 @@ architecture tb_arch of fec_tb is
     signal   test_out_x                           : std_logic;
     signal   test_out_y                           : std_logic;
     signal   out_valid                            : std_logic;
+    signal   flag                                 : std_logic := '0';
 begin 
 
     --instant 
@@ -54,6 +55,8 @@ begin
             test_in_bit <= test_in_vector(i);
             wait for CLK_50_PERIOD; 
         end loop;
+        wait until flag = '1'; 
+        en  <= '0';
         wait;
     end process; 
 
@@ -65,6 +68,7 @@ begin
             test_out_vector(i) <= test_out_bit; 
             wait for CLK_100_PERIOD; 
         end loop;
+        flag    <= '1'; 
         wait;
     end process;
 end tb_arch; 
