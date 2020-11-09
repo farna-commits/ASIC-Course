@@ -8,9 +8,7 @@ entity interleaver is
         reset, FEC_encoder_out_valid          : in    std_logic; 
         data_in                               : in    std_logic; 
         interleaver_out_valid                 : out   std_logic; 
-        data_out                              : out   std_logic;
-        mk_shuffled_out                       : out   std_logic
-
+        data_out                              : out   std_logic
     );
 end interleaver;
 
@@ -58,9 +56,10 @@ begin
     --output bits with new indecies 
     process (clk_100mhz, reset) begin 
         if(reset = '1') then 
-            data_out    <= '0';
-            counter_out <= 191; 
+            data_out                    <= '0';
+            counter_out                 <= 191; 
             finished_outputting_flag    <= '0';
+            interleaver_out_valid       <= '0';
         elsif(rising_edge(clk_100mhz)) then 
             if (FEC_encoder_out_valid = '1') then 
                 if (finished_buffering_flag = '1') then 
@@ -75,6 +74,8 @@ begin
                         end if;
                     end if;
                 end if;
+            else
+                interleaver_out_valid   <= '0';
             end if; 
         end if;
     end process; 

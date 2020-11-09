@@ -45,7 +45,7 @@ begin
         end if; 
     end process;
 
-    process (clk_100mhz, reset, flag) begin 
+    process (clk_100mhz, reset) begin 
         if (reset = '1') then 
             output1                 <= (others => '0'); 
             output2                 <= (others => '0');
