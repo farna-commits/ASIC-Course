@@ -2,6 +2,8 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
+-- Note: senstivity list of a syncronus process must have clk and async reset only
+
 entity states_FEC_encoder is 
     port(
         clk_50mhz, clk_100mhz                 	: in    std_logic; 
@@ -42,7 +44,7 @@ begin
 	data_out    						<= x_output_signal when (flag = '1') else y_output_signal;
 
     -----------------------------------------------------------------------------state machine 1 -----------------------------------------------------------------------------
-    process (reset, clk_50mhz, input_state_reg, rand_out_valid, counter_buffer_input, counter_shift_and_output, finished_outputting_flag) begin 
+    process (reset, clk_50mhz) begin 
         if (reset = '1') then 
             data_in_buffer              <= (others => '0'); 
             counter_buffer_input        <= 0;
@@ -105,7 +107,7 @@ begin
 
 
 -----------------------------------------------------------------------------state machine 2 -----------------------------------------------------------------------------
-	process (clk_100mhz, reset, counter_shift_and_output, finished_tail_flag) begin 
+	process (clk_100mhz, reset) begin 
 	if (reset = '1') then 
 		x_output_signal         <= '0';
 		y_output_signal         <= '0';
