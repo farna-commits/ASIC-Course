@@ -8,12 +8,12 @@ end modulation_tb;
 architecture tb_arch of modulation_tb is
     component modulation
         port(
-            clk_100mhz              : in  std_logic; 
-            reset                   : in  std_logic; 
-            interleaver_out_valid   : in  std_logic; 
-            data_in                 : in  std_logic; 
-            modulation_out_valid    : out std_logic; 
-            output1, output2        : out std_logic_vector(15 downto 0) 
+            clk_100mhz                            : in  std_logic; 
+            reset                                 : in  std_logic; 
+            interleaver_out_valid                 : in  std_logic; 
+            data_in                               : in  std_logic; 
+            modulation_out_valid                  : out std_logic; 
+            output1, output2                      : out std_logic_vector(15 downto 0) 
 
         );
     end component;
@@ -28,7 +28,7 @@ architecture tb_arch of modulation_tb is
     signal   reset                                : std_logic; 
     signal   en                                   : std_logic; 
     signal   test_in_vector                       : std_logic_vector(191 downto 0) := x"4B047DFA42F2A5D5F61C021A5851E9A309A24FD58086BD1E";
-    signal   demodulation_vector                       : std_logic_vector(191 downto 0) := (others => '0');
+    signal   demodulation_vector                  : std_logic_vector(191 downto 0) := (others => '0');
     signal   test_in_bit                          : std_logic;
     signal   test_out1_bit                        : std_logic_vector(15 downto 0) ;
     signal   test_out2_bit                        : std_logic_vector(15 downto 0) ;
