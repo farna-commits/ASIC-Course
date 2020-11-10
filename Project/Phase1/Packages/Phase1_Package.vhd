@@ -11,7 +11,8 @@ package Phase1_Package is
     constant CLK_50_HALF_PERIOD                 : Time:= CLK_50_PERIOD / 2; 
     constant CLK_100_PERIOD                     : Time:= 10 ns; 
     constant CLK_100_HALF_PERIOD                : Time:= CLK_100_PERIOD / 2; 
-    signal   clk_50                             : std_logic := '0';
+    constant START_SIMULATION_MSG               : string := "================Simulation started================";
+    constant END_SIMULATION_MSG                 : string := "================Simulation finished=============="; 
     --Randomizer
     constant INPUT_RANDOMIZER_VECTOR_CONST      : std_logic_vector(95 downto 0)  := x"ACBCD2114DAE1577C6DBF4C9"; 
     constant OUTPUT_RANDOMIZER_VECTOR_CONST     : std_logic_vector(95 downto 0)  := x"558AC4A53A1724E163AC2BF9";
@@ -29,18 +30,33 @@ package Phase1_Package is
 
 
 --=============================================================================================================================================
-------------------------------------------------------------------Functions------------------------------------------------------------------ 
+------------------------------------------------------------------Functions & Procedures------------------------------------------------------ 
 --=============================================================================================================================================
-
+    -- procedures 
+    --fill input 
+    procedure fill_96_inputs_procedure  (start, endd : in integer; input_vector : std_logic_vector(95 downto 0); signal test_data_bit : out std_logic); 
+    procedure fill_192_inputs_procedure (start, endd : in integer; input_vector : std_logic_vector(191 downto 0); signal test_data_bit : out std_logic); 
 --=============================================================================================================================================
 --=============================================================================================================================================    
 --=============================================================================================================================================   
 end package Phase1_Package;
 
--- package body Phase1_Package is 
---     --clocks
---     procedure clk_50mhz_procedure is 
---     begin 
---         clk_50  <= not clk_50 after CLK_50_HALF_PERIOD;
---     end clk_50mhz_procedure;
--- end package body Phase1_Package;
+package body Phase1_Package is 
+    --procedures
+    --fill input 
+    procedure fill_96_inputs_procedure (start, endd : in integer; input_vector : std_logic_vector(95 downto 0); signal test_data_bit : out std_logic) is 
+        begin 
+            for i in endd downto start loop       --flipped loop because A is the first input in the word doc
+                test_data_bit <= input_vector(i); 
+                wait for CLK_50_PERIOD;                 --to take next input after next pos edge 
+            end loop; 
+        end fill_96_inputs_procedure;
+    
+    procedure fill_192_inputs_procedure (start, endd : in integer; input_vector : std_logic_vector(191 downto 0); signal test_data_bit : out std_logic) is 
+        begin 
+            for i in endd downto start loop 
+                test_data_bit <= input_vector(i);
+                wait for CLK_100_PERIOD; 
+            end loop;
+        end fill_192_inputs_procedure;
+end package body Phase1_Package; 
