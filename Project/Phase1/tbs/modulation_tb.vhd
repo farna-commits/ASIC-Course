@@ -50,16 +50,14 @@ begin
     clk_100 <= not clk_100 after CLK_100_HALF_PERIOD; 
 
     --serial input in 
-    process begin 
+    process  
+    begin 
         reset   <= '1'; 
         en      <= '0';
         wait for CLK_100_PERIOD + 5 ns; 
         reset   <= '0';
         en      <= '1';
-        for i in 191 downto 0 loop 
-            test_in_bit <= test_in_vector(i);
-            wait for CLK_100_PERIOD; 
-        end loop;
+        fill_192_inputs_procedure (0, 191, test_in_vector, test_in_bit);
         en  <= '0';
         wait;
     end process; 
@@ -67,27 +65,39 @@ begin
     --demodulation test 
     process 
     variable i : integer := 191;
+    --demodulation for testing 
+    procedure demodulation_procedure is 
+        begin 
+            while (i > 0) loop 
+                if (test_out1_bit = ZeroPointSeven and test_out2_bit = ZeroPointSeven) then 
+                    demodulation_vector(i)      <= '0';
+                    demodulation_vector(i-1)    <= '0';
+                elsif(test_out1_bit = NegativeZeroPointSeven and test_out2_bit = NegativeZeroPointSeven) then 
+                    demodulation_vector(i)      <= '1';
+                    demodulation_vector(i-1)    <= '1';
+                elsif(test_out1_bit = NegativeZeroPointSeven and test_out2_bit = ZeroPointSeven) then 
+                    demodulation_vector(i)      <= '1';
+                    demodulation_vector(i-1)    <= '0';
+                elsif(test_out1_bit = ZeroPointSeven and test_out2_bit = NegativeZeroPointSeven) then
+                    demodulation_vector(i)      <= '0';
+                    demodulation_vector(i-1)    <= '1';
+                end if;
+                i := i - 2; 
+                wait for 2 * CLK_100_PERIOD;
+            end loop;
+        end demodulation_procedure;
     begin         
         wait until out_valid = '1'; 
-        -- wait on test_out2_bit;
         wait for 2 ns; 
-        while (i > 0) loop 
-            if (test_out1_bit = ZeroPointSeven and test_out2_bit = ZeroPointSeven) then 
-                demodulation_vector(i)      <= '0';
-                demodulation_vector(i-1)    <= '0';
-            elsif(test_out1_bit = NegativeZeroPointSeven and test_out2_bit = NegativeZeroPointSeven) then 
-                demodulation_vector(i)      <= '1';
-                demodulation_vector(i-1)    <= '1';
-            elsif(test_out1_bit = NegativeZeroPointSeven and test_out2_bit = ZeroPointSeven) then 
-                demodulation_vector(i)      <= '1';
-                demodulation_vector(i-1)    <= '0';
-            elsif(test_out1_bit = ZeroPointSeven and test_out2_bit = NegativeZeroPointSeven) then
-                demodulation_vector(i)      <= '0';
-                demodulation_vector(i-1)    <= '1';
-            end if;
-            i := i - 2; 
-            wait for 2 * CLK_100_PERIOD;
-        end loop;
+        report START_SIMULATION_MSG;
+        report "Starting Demodulation of modulated output: " severity note;
+        demodulation_procedure;
+        report "Demodulation finished. " severity note;
+        assert demodulation_vector /= INPUT_MODULATION_VECTOR_CONST
+            report "Demodulated vector is equal to the input one, test succeeded" severity note; 
+            assert demodulation_vector = INPUT_MODULATION_VECTOR_CONST
+                report "Demodulated vector is not equal to the input one, test failed" severity error; 
+        report END_SIMULATION_MSG;
         wait;
     end process;
 

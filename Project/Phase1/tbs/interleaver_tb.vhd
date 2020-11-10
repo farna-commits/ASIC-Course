@@ -2,6 +2,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 use work.Phase1_Package.all;
+use work.Phase1_Package.all;
 
 entity interleaver_tb is
 end interleaver_tb;
@@ -32,9 +33,14 @@ architecture tb_arch of interleaver_tb is
 begin 
 
     --instant 
-    uut: interleaver port map (clk_100mhz => clk, reset => reset, FEC_encoder_out_valid => en, 
-                                data_in => test_in_bit, interleaver_out_valid => out_valid, 
-                                data_out => test_out_bit);
+    uut: interleaver port map (
+        clk_100mhz              => clk, 
+        reset                   => reset, 
+        FEC_encoder_out_valid   => en, 
+        data_in                 => test_in_bit, 
+        interleaver_out_valid   => out_valid, 
+        data_out                => test_out_bit
+        );
 
     test_in_vector  <= INPUT_INTERLEAVER_VECTOR_CONST;
     --clk process 
@@ -46,10 +52,7 @@ begin
         wait for CLK_100_PERIOD + 5 ns; 
         reset   <= '0';
         en      <= '1';
-        for i in 0 to 191 loop 
-            test_in_bit <= test_in_vector(i);
-            wait for CLK_100_PERIOD; 
-        end loop;
+        fill_192_inputs_procedure (0, 191, test_in_vector, test_in_bit);
         wait until flag = '1'; 
         en  <= '0';
         wait;
@@ -59,11 +62,14 @@ begin
     process begin 
         wait until out_valid = '1'; 
         wait for 2 ns; 
-        for i in 191 downto 0 loop 
-            test_out_vector(i) <= test_out_bit; 
-            wait for CLK_100_PERIOD; 
-        end loop;
+        fill_192_outputs_procedure (0, 191, test_out_vector, test_out_bit);
         flag    <= '1';
+        report START_SIMULATION_MSG;
+        assert test_out_vector /= INPUT_MODULATION_VECTOR_CONST
+            report "Output vector is equal to the output in the test case provided, test succeeded" severity note; 
+        assert test_out_vector = INPUT_MODULATION_VECTOR_CONST
+            report "Output vector is not equal to the output in the test case provided, test failed" severity error;
+        report END_SIMULATION_MSG;
         wait;
     end process;
 

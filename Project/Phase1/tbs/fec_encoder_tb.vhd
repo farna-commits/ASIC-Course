@@ -36,7 +36,18 @@ architecture tb_arch of fec_tb is
 begin 
 
     --instant 
-    uut: states_FEC_encoder port map (clk_50mhz => clk_50, clk_100mhz => clk_100, reset => reset, rand_out_valid => en, data_in => test_in_bit, x_output => test_out_x, y_output => test_out_y, FEC_encoder_out_valid => out_valid, data_out => test_out_bit);
+    uut: states_FEC_encoder port map (
+
+        clk_50mhz               => clk_50, 
+        clk_100mhz              => clk_100, 
+        reset                   => reset, 
+        rand_out_valid          => en, 
+        data_in                 => test_in_bit, 
+        x_output                => test_out_x, 
+        y_output                => test_out_y, 
+        FEC_encoder_out_valid   => out_valid, 
+        data_out                => test_out_bit
+        );
 
     --clk process 
     clk_50 <= not clk_50 after CLK_50_HALF_PERIOD; 
@@ -49,10 +60,7 @@ begin
         wait for CLK_50_PERIOD + 10 ns; 
         reset   <= '0';
         en      <= '1';
-        for i in 95 downto 0 loop 
-            test_in_bit <= test_in_vector(i);
-            wait for CLK_50_PERIOD; 
-        end loop;
+        fill_96_inputs_procedure(0, 95, test_in_vector, test_in_bit);
         wait until flag = '1'; 
         en  <= '0';
         wait;
@@ -62,11 +70,14 @@ begin
     process begin 
         wait until out_valid = '1';
         wait for 2 ns;
-        for i in 191 downto 0 loop 
-            test_out_vector(i) <= test_out_bit; 
-            wait for CLK_100_PERIOD; 
-        end loop;
+        fill_192_outputs_procedure (0, 191, test_out_vector, test_out_bit);
         flag    <= '1'; 
+        report START_SIMULATION_MSG;
+        assert test_out_vector /= INPUT_INTERLEAVER_VECTOR_CONST
+            report "Output vector is equal to the output in the test case provided, test succeeded" severity note; 
+        assert test_out_vector = INPUT_INTERLEAVER_VECTOR_CONST
+            report "Output vector is not equal to the output in the test case provided, test failed" severity error;
+        report END_SIMULATION_MSG;
         wait;
     end process;
 end tb_arch; 
