@@ -36,6 +36,7 @@ package Phase1_Package is
     --fill input 
     procedure fill_96_inputs_procedure  (start, endd : in integer; input_vector : std_logic_vector(95 downto 0); signal test_data_bit : out std_logic); 
     procedure fill_192_inputs_procedure (start, endd : in integer; input_vector : std_logic_vector(191 downto 0); signal test_data_bit : out std_logic); 
+    procedure fill_192_outputs_procedure (start, endd : in integer; signal output_vector : out std_logic_vector(191 downto 0); signal test_data_bit : in std_logic);
 --=============================================================================================================================================
 --=============================================================================================================================================    
 --=============================================================================================================================================   
@@ -46,11 +47,11 @@ package body Phase1_Package is
     --fill input 
     procedure fill_96_inputs_procedure (start, endd : in integer; input_vector : std_logic_vector(95 downto 0); signal test_data_bit : out std_logic) is 
         begin 
-            for i in endd downto start loop       --flipped loop because A is the first input in the word doc
+            for i in endd downto start loop    
                 test_data_bit <= input_vector(i); 
-                wait for CLK_50_PERIOD;                 --to take next input after next pos edge 
+                wait for CLK_50_PERIOD;                
             end loop; 
-        end fill_96_inputs_procedure;
+    end fill_96_inputs_procedure;
     
     procedure fill_192_inputs_procedure (start, endd : in integer; input_vector : std_logic_vector(191 downto 0); signal test_data_bit : out std_logic) is 
         begin 
@@ -58,5 +59,14 @@ package body Phase1_Package is
                 test_data_bit <= input_vector(i);
                 wait for CLK_100_PERIOD; 
             end loop;
-        end fill_192_inputs_procedure;
+    end fill_192_inputs_procedure;
+
+    --fill output
+    procedure fill_192_outputs_procedure (start, endd : in integer; signal output_vector : out std_logic_vector(191 downto 0);  signal test_data_bit : in std_logic) is 
+        begin 
+            for i in endd downto start loop 
+                output_vector(i) <= test_data_bit;
+                wait for CLK_100_PERIOD; 
+            end loop;
+    end fill_192_outputs_procedure;
 end package body Phase1_Package; 
