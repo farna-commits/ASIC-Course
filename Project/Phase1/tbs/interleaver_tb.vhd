@@ -17,6 +17,15 @@ architecture tb_arch of interleaver_tb is
             data_out                              : out   std_logic
         );
     end component;
+    component states_interleaver
+        port(
+            clk_100mhz                            : in    std_logic; 
+            reset, FEC_encoder_out_valid          : in    std_logic; 
+            data_in                               : in    std_logic; 
+            interleaver_out_valid                 : out   std_logic; 
+            data_out                              : out   std_logic
+        );
+    end component;
 
     --signals 
     signal clk                                    : std_logic := '0'; 
@@ -33,7 +42,16 @@ architecture tb_arch of interleaver_tb is
 begin 
 
     --instant 
-    uut: interleaver port map (
+    -- uut: interleaver port map (
+    --     clk_100mhz              => clk, 
+    --     reset                   => reset, 
+    --     FEC_encoder_out_valid   => en, 
+    --     data_in                 => test_in_bit, 
+    --     interleaver_out_valid   => out_valid, 
+    --     data_out                => test_out_bit
+    --     );
+
+    uut: states_interleaver port map (
         clk_100mhz              => clk, 
         reset                   => reset, 
         FEC_encoder_out_valid   => en, 
