@@ -38,7 +38,7 @@ begin
             finished_buffering_flag <= '0';
         elsif (rising_edge(clk_100mhz)) then
             if (FEC_encoder_out_valid = '1') then 
-                if (counter < BUFFER_SIZE) then 
+                if (counter < BUFFER_SIZE-1) then 
                     if (finished_buffering_flag = '0') then 
                         data_in_buffer(mk_pos)  <= data_in; 
                         counter_kmod16          <= counter_kmod16 + 1;
@@ -57,19 +57,19 @@ begin
     process (clk_100mhz, reset) begin 
         if(reset = '1') then 
             data_out                    <= '0';
-            counter_out                 <= 191; 
+            counter_out                 <= 0; 
             finished_outputting_flag    <= '0';
             interleaver_out_valid       <= '0';
         elsif(rising_edge(clk_100mhz)) then 
             if (FEC_encoder_out_valid = '1') then 
                 if (finished_buffering_flag = '1') then 
                     if (finished_outputting_flag = '0') then 
-                        if(counter_out >= 0) then 
+                        if(counter_out >= 0 and counter_out < BUFFER_SIZE) then 
                             data_out                <= data_in_buffer(counter_out);
                             interleaver_out_valid   <= '1'; 
-                            counter_out             <= counter_out - 1;
+                            counter_out             <= counter_out + 1;
                         else 
-                            counter_out <= 191;
+                            counter_out <= 0;
                             finished_outputting_flag    <= '1';
                         end if;
                     end if;
