@@ -1,6 +1,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
+use work.Phase1_Package.all;
 
 entity modulation_tb is
 end modulation_tb;
@@ -17,17 +18,12 @@ architecture tb_arch of modulation_tb is
 
         );
     end component;
-
-    --constants 
-    constant CLK_100_PERIOD                       : Time := 10 ns; 
-    constant CLK_100_HALF_PERIOD                  : Time := CLK_100_PERIOD / 2;
-    constant ZeroPointSeven                       : std_logic_vector(15 downto 0) := "0101101001111111";
-    constant NegativeZeroPointSeven               : std_logic_vector(15 downto 0) := "1010010110000001";
+    
     --signals 
     signal   clk_100                              : std_logic := '0'; 
     signal   reset                                : std_logic; 
     signal   en                                   : std_logic; 
-    signal   test_in_vector                       : std_logic_vector(191 downto 0) := x"4B047DFA42F2A5D5F61C021A5851E9A309A24FD58086BD1E";
+    signal   test_in_vector                       : std_logic_vector(191 downto 0);
     signal   demodulation_vector                  : std_logic_vector(191 downto 0) := (others => '0');
     signal   test_in_bit                          : std_logic;
     signal   test_out1_bit                        : std_logic_vector(15 downto 0) ;
@@ -49,6 +45,7 @@ begin
         output2                 => test_out2_bit
     );  
 
+    test_in_vector <= INPUT_MODULATION_VECTOR_CONST; 
     --clk process 
     clk_100 <= not clk_100 after CLK_100_HALF_PERIOD; 
 

@@ -1,6 +1,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
+use work.Phase1_Package.all;
 
 entity fec_tb is
 end fec_tb;
@@ -18,24 +19,20 @@ architecture tb_arch of fec_tb is
         );
     end component;
 
-    --constants 
-    constant CLK_50_PERIOD                        : Time := 20 ns; 
-    constant CLK_50_HALF_PERIOD                   : Time := CLK_50_PERIOD / 2; 
-    constant CLK_100_PERIOD                       : Time := 10 ns; 
-    constant CLK_100_HALF_PERIOD                  : Time := CLK_100_PERIOD / 2;
     --signals                 
     signal   clk_50                               : std_logic := '0'; 
     signal   clk_100                              : std_logic := '1'; 
     signal   reset                                : std_logic; 
     signal   en                                   : std_logic; 
-    signal   test_in_vector                       : std_logic_vector(95 downto 0) := x"558AC4A53A1724E163AC2BF9";
-    signal   test_out_vector                      : std_logic_vector(191 downto 0) := x"000000000000000000000000000000000000000000000000";
+    signal   test_in_vector                       : std_logic_vector(95 downto 0);
+    signal   test_out_vector                      : std_logic_vector(191 downto 0) := (others => '0');
     signal   test_in_bit                          : std_logic;
     signal   test_out_bit                         : std_logic;
     signal   test_out_x                           : std_logic;
     signal   test_out_y                           : std_logic;
     signal   out_valid                            : std_logic;
     signal   flag                                 : std_logic := '0';
+
 begin 
 
     --instant 
@@ -45,6 +42,7 @@ begin
     clk_50 <= not clk_50 after CLK_50_HALF_PERIOD; 
     clk_100 <= not clk_100 after CLK_100_HALF_PERIOD; 
 
+    test_in_vector  <= INPUT_FEC_VECTOR_CONST; 
     --serial input in 
     process begin 
         reset   <= '1'; 

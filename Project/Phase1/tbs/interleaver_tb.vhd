@@ -1,6 +1,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
+use work.Phase1_Package.all;
 
 entity interleaver_tb is
 end interleaver_tb;
@@ -16,15 +17,12 @@ architecture tb_arch of interleaver_tb is
         );
     end component;
 
-    --constants 
-    constant CLK_PERIOD                           : Time := 10 ns; 
-    constant CLK_HALF_PERIOD                      : Time := CLK_PERIOD / 2; 
     --signals 
     signal clk                                    : std_logic := '0'; 
     signal reset                                  : std_logic; 
     signal en                                     : std_logic; 
-    signal test_in_vector                         : std_logic_vector(191 downto 0) := x"2833E48D392026D5B6DC5E4AF47ADD29494B6C89151348CA";
-    signal test_out_vector                        : std_logic_vector(191 downto 0) := x"000000000000000000000000000000000000000000000000";
+    signal test_in_vector                         : std_logic_vector(191 downto 0);
+    signal test_out_vector                        : std_logic_vector(191 downto 0) := (others => '0');
     signal test_in_bit                            : std_logic;
     signal test_out_bit                           : std_logic;
     signal out_valid                              : std_logic;
@@ -38,18 +36,19 @@ begin
                                 data_in => test_in_bit, interleaver_out_valid => out_valid, 
                                 data_out => test_out_bit);
 
+    test_in_vector  <= INPUT_INTERLEAVER_VECTOR_CONST;
     --clk process 
-    clk <= not clk after CLK_HALF_PERIOD; 
+    clk <= not clk after CLK_100_HALF_PERIOD; 
 
     --serial input in 
     process begin 
         reset   <= '1'; 
-        wait for CLK_PERIOD + 5 ns; 
+        wait for CLK_100_PERIOD + 5 ns; 
         reset   <= '0';
         en      <= '1';
         for i in 0 to 191 loop 
             test_in_bit <= test_in_vector(i);
-            wait for CLK_PERIOD; 
+            wait for CLK_100_PERIOD; 
         end loop;
         wait until flag = '1'; 
         en  <= '0';
@@ -62,7 +61,7 @@ begin
         wait for 2 ns; 
         for i in 191 downto 0 loop 
             test_out_vector(i) <= test_out_bit; 
-            wait for CLK_PERIOD; 
+            wait for CLK_100_PERIOD; 
         end loop;
         flag    <= '1';
         wait;
