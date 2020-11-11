@@ -61,8 +61,9 @@ begin
         reset   <= '0';
         en      <= '1';
         fill_96_inputs_procedure(0, 95, test_in_vector, test_in_bit);
-        wait until flag = '1'; 
         en  <= '0';
+        wait until flag = '1'; 
+        -- en  <= '0';
         wait;
     end process; 
 

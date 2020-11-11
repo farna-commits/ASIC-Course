@@ -63,7 +63,7 @@ begin
 						if (finished_buffering_flag = '0') then 
                             data_in_buffer(counter_buffer_input) <= data_in; 
 							counter_buffer_input                 <= counter_buffer_input + 1;
-							input_state_reg                     <= buffer_input; 
+							input_state_reg                      <= buffer_input; 
                         end if; 
                     else 
                         input_state_reg    <= idle; 
