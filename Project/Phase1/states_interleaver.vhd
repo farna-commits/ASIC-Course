@@ -32,6 +32,7 @@ begin
 
     --continous 
     mk_pos  <= (12 * to_integer(counter_kmod16)) + (to_integer(counter) / 16); 
+    -- finished_buffering_flag <= '1' when (counter = 191) else '0'; 
 
     process(clk_100mhz, reset) begin 
         if (reset = '1') then 
@@ -59,13 +60,13 @@ begin
                         state_reg   <= idle; 
                     end if;
                 when buffer_input => 
-                    if (counter < BUFFER_SIZE-1) then 
+                    if (counter < BUFFER_SIZE-2) then 
                         if (finished_buffering_flag = '0') then 
                             data_in_buffer(mk_pos)  <= data_in; 
                             counter_kmod16          <= counter_kmod16 + 1;
                             counter                 <= counter + 1;
                             state_reg               <= buffer_input;
-                        end if;
+                        end if;                    
                     else 
                         counter                 <= (others => '0');
                         counter_kmod16          <= (others => '0');
