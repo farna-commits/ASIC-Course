@@ -83,17 +83,24 @@ begin
     --continous 
     mk_pos  <= (12 * to_integer(counter_kmod16)) + (to_integer(counter) / 16); 
     -- finished_buffering_flag <= '1' when (counter = 191) else '0'; 
-    wren_a                  <= '1';
+    -- wren_a                  <= '1';
+    address_b               <= std_logic_vector(to_unsigned(counter_out, address_b'length));
+    data_a(0)               <= data_in;
+    wren_a  <= FEC_encoder_out_valid; 
+    data_out                <= q_b(0);
     process(clk_100mhz, reset) begin 
         if (reset = '1') then 
             counter_kmod16              <= (others => '0');
             counter                     <= (others => '0');
             data_in_buffer              <= (others => '0'); 
             finished_buffering_flag     <= '0';
-            data_out                    <= '0';
+            -- data_out                    <= '0';
             counter_out                 <=  0; 
             finished_outputting_flag    <= '0';
             interleaver_out_valid       <= '0';
+            -- data_a(0)                   <= '0';
+            -- data_b(0)                   <= '0';
+            -- address_b                   <= (others => '0');
         elsif(rising_edge(clk_100mhz)) then 
             case state_reg is 
                 when idle =>                     
@@ -101,7 +108,7 @@ begin
                         if (counter < BUFFER_SIZE-1) then 
                             if (finished_buffering_flag = '0') then 
                                 -- data_in_buffer(mk_pos)  <= data_in; 
-                                data_a(0)               <= data_in;
+                                -- data_a(0)               <= data_in;
                                 -- wren_a                  <= '1';
                                 counter_kmod16          <= counter_kmod16 + 1;
                                 counter                 <= counter + 1;
@@ -115,7 +122,8 @@ begin
                     if (counter < BUFFER_SIZE-1) then 
                         if (finished_buffering_flag = '0') then 
                             -- data_in_buffer(mk_pos)  <= data_in; 
-                            data_a(0)               <= data_in;
+                            -- data_a(0)               <= data_in;
+                            -- wren_a                  <= '1';
                             counter_kmod16          <= counter_kmod16 + 1;
                             counter                 <= counter + 1;
                             state_reg               <= buffer_input;
@@ -125,8 +133,8 @@ begin
                         counter_kmod16          <= (others => '0');
                         finished_buffering_flag <= '1';
                         state_reg               <= output_state;
-                        data_out                <= q_b(0);
-                        address_b               <= std_logic_vector(to_unsigned(counter_out, address_b'length));
+                        -- data_out                <= q_b(0);
+                        -- address_b               <= std_logic_vector(to_unsigned(counter_out, address_b'length));
                         counter_out             <= counter_out + 1;
                         interleaver_out_valid   <= '1';
                     end if; 
@@ -135,8 +143,8 @@ begin
                         if (finished_outputting_flag = '0') then 
                             if(counter_out >= 0 and counter_out < BUFFER_SIZE) then 
                                 -- data_out                <= data_in_buffer(counter_out);
-                                data_out                <= q_b(0);
-                                address_b               <= std_logic_vector(to_unsigned(counter_out, address_b'length));
+                                -- data_out                <= q_b(0);
+                                -- address_b               <= std_logic_vector(to_unsigned(counter_out, address_b'length));
                                 counter_out             <= counter_out + 1;
                                 state_reg               <= output_state;
                                 interleaver_out_valid   <= '1';
