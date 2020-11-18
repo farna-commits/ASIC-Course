@@ -47,7 +47,7 @@ begin
         wait for CLK_PERIOD + 5 ns; 
         reset   <= '0';
         en      <= '1';
-        for i in 0 to 191 loop 
+        for i in 191 downto 0 loop 
             test_in_bit <= test_in_vector(i);
             wait for CLK_PERIOD; 
         end loop;
