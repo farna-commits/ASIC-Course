@@ -60,7 +60,7 @@ begin
                         state_reg   <= idle; 
                     end if;
                 when buffer_input => 
-                    if (counter < BUFFER_SIZE-2) then 
+                    if (counter < BUFFER_SIZE-1) then 
                         if (finished_buffering_flag = '0') then 
                             data_in_buffer(mk_pos)  <= data_in; 
                             counter_kmod16          <= counter_kmod16 + 1;
@@ -72,6 +72,9 @@ begin
                         counter_kmod16          <= (others => '0');
                         finished_buffering_flag <= '1';
                         state_reg               <= output_state;
+                        data_out                <= data_in_buffer(counter_out);
+                        counter_out             <= counter_out + 1;
+                        interleaver_out_valid   <= '1';
                     end if; 
                 when output_state =>
                     if (finished_buffering_flag = '1') then 
@@ -80,7 +83,7 @@ begin
                                 data_out                <= data_in_buffer(counter_out);
                                 counter_out             <= counter_out + 1;
                                 state_reg               <= output_state;
-                                interleaver_out_valid   <= '1';
+                                
                             else 
                                 counter_out                 <= 0;
                                 finished_outputting_flag    <= '1';
