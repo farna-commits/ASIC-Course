@@ -31,7 +31,7 @@ architecture states_FEC_encoder_arch of states_FEC_encoder is
 	signal   data_in_buffer                   	: std_logic_vector(BUFFER_SIZE-1 downto 0);
 
     --state machines 
-    type input_state_type is (idle, buffer_input, get_tail_bits, shifting); 
+    type input_state_type is (idle, buffer_input, shifting); 
 	signal input_state_reg, input_state_next    : input_state_type; 
 	type output_state_type is (idle, x, y); 
     signal output_state_reg, output_state_next  : output_state_type;
@@ -39,9 +39,11 @@ architecture states_FEC_encoder_arch of states_FEC_encoder is
 begin
 
     --contineous 
-    x_output    						<= x_output_signal; 
-    y_output    						<= y_output_signal; 
-	data_out    						<= x_output_signal when (flag = '1') else y_output_signal;
+    x_output  <= x_output_signal; 
+    y_output  <= y_output_signal; 
+    data_out  <= ( data_in_buffer(counter_shift_and_output) xor shift_reg(0) xor shift_reg(3) xor shift_reg(4) xor shift_reg(5) ) when ( (output_state_reg = idle and finished_tail_flag = '1') or output_state_reg = x) else 
+    (data_in_buffer(counter_shift_and_output) xor shift_reg(0) xor shift_reg(1) xor shift_reg(3) xor shift_reg(4)) when (output_state_reg = y); 
+    FEC_encoder_out_valid	<= '1' when (input_state_reg = shifting) else '0';	
 
     -----------------------------------------------------------------------------state machine 1 -----------------------------------------------------------------------------
     process (reset, clk_50mhz) begin 
@@ -69,21 +71,22 @@ begin
                         input_state_reg    <= idle; 
                     end if;
                 when buffer_input => 
-                    if (counter_buffer_input < BUFFER_SIZE) then
+                    if (counter_buffer_input < BUFFER_SIZE-1) then
                         if (finished_buffering_flag = '0') then 
                             input_state_reg                     	<= buffer_input; 
                             data_in_buffer(counter_buffer_input) 	<= data_in; 
                             counter_buffer_input                 	<= counter_buffer_input + 1;
                         end if; 
-                    elsif (counter_buffer_input = BUFFER_SIZE) then 
-						input_state_reg                     	<= get_tail_bits;
+                    elsif (counter_buffer_input = BUFFER_SIZE-1) then 
+                        data_in_buffer(counter_buffer_input) 	<= data_in; 
+                        counter_buffer_input                 	<= counter_buffer_input + 1;
                         counter_buffer_input                 	<= 0;
                         finished_buffering_flag              	<= '1'; 
+                        --get tail bits 
+                        shift_reg                               <= data_in & data_in_buffer(BUFFER_SIZE-2) & data_in_buffer(BUFFER_SIZE-3) & data_in_buffer(BUFFER_SIZE-4) & data_in_buffer(BUFFER_SIZE-5) & data_in_buffer(BUFFER_SIZE-6); --take tail bits as last 6 bits from buffer
+                        input_state_reg    	                    <= shifting; 
+                        finished_tail_flag	                    <= '1';
                     end if;
-                when get_tail_bits => 
-                    shift_reg           <= data_in_buffer(BUFFER_SIZE-1) & data_in_buffer(BUFFER_SIZE-2) & data_in_buffer(BUFFER_SIZE-3) & data_in_buffer(BUFFER_SIZE-4) & data_in_buffer(BUFFER_SIZE-5) & data_in_buffer(BUFFER_SIZE-6); --take tail bits as last 6 bits from buffer
-					input_state_reg    	<= shifting; 
-					finished_tail_flag	<= '1';
 				when shifting => 
                     if (finished_buffering_flag = '1') then 
                         if (counter_shift_and_output < BUFFER_SIZE-1) then 
@@ -111,18 +114,13 @@ begin
 	if (reset = '1') then 
 		x_output_signal         <= '0';
 		y_output_signal         <= '0';
-		FEC_encoder_out_valid	<= '0';
 		flag					<= '1'; 
 	elsif(rising_edge(clk_100mhz)) then 
         if (finished_tail_flag = '1') then
-            if (counter_shift_and_output = 95) then 
-                FEC_encoder_out_valid   <= '0';
-            end if;
 			case output_state_reg is 
 				when idle => 
 					if (counter_shift_and_output = 0) then 
 						x_output_signal     	<= data_in_buffer(counter_shift_and_output) xor shift_reg(0) xor shift_reg(3) xor shift_reg(4) xor shift_reg(5);
-						FEC_encoder_out_valid	<= '1';	
 						output_state_reg		<= y; 
 						flag					<= '1';					
 					else 
