@@ -92,9 +92,9 @@ begin
             counter_kmod16              <= (others => '0');
             counter                     <= (others => '0');
             data_in_buffer              <= (others => '0'); 
-            finished_buffering_flag     <= '0';
+            -- finished_buffering_flag     <= '0';
             counter_out                 <=  0; 
-            finished_outputting_flag    <= '0';
+            -- finished_outputting_flag    <= '0';
             interleaver_out_valid       <= '0';
         elsif(rising_edge(clk_100mhz)) then 
             case state_reg is 
@@ -127,18 +127,18 @@ begin
                     end if; 
                 when output_state =>
                     -- if (finished_buffering_flag = '1') then 
-                        if (finished_outputting_flag = '0') then 
+                        -- if (finished_outputting_flag = '0') then 
                             if(counter_out >= 0 and counter_out < BUFFER_SIZE) then 
                                 counter_out             <= counter_out + 1;
                                 state_reg               <= output_state;
                                 interleaver_out_valid   <= '1';
                             else 
                                 counter_out                 <= 0;
-                                finished_outputting_flag    <= '1';
+                                -- finished_outputting_flag    <= '1';
                                 state_reg                   <= idle;
                                 interleaver_out_valid       <= '0';
                             end if;
-                        end if;
+                        -- end if;
                     -- end if;
             end case;
         end if;
