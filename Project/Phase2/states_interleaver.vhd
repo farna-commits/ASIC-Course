@@ -127,7 +127,7 @@ begin
                         PingPong_flag   <= '1';
                     end if; 
                 when output_state =>
-                    if (counter_out = BUFFER_SIZE2-1) then 
+                    if (counter = BUFFER_SIZE-1) then 
                         PingPong_flag   <= '0';
                         counter                 <= "00000000";
                         counter_kmod16          <= "0000";
@@ -136,8 +136,10 @@ begin
                         counter_out             <= counter_out + 1;
                         state_reg               <= output_state;
                         interleaver_out_valid   <= '1';
-                        counter_kmod16          <= counter_kmod16 + 1;
-                        counter                 <= counter + 1;
+                        if (counter /= BUFFER_SIZE-1) then
+                            counter_kmod16          <= counter_kmod16 + 1;
+                            counter                 <= counter + 1;
+                        end if;
                     else 
                         counter_out                 <= 0;
                         state_reg                   <= idle;
