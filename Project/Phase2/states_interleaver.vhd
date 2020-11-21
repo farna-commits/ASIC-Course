@@ -29,7 +29,7 @@ architecture states_interleaver_arch of states_interleaver is
     signal   PingPong_flag                    : std_logic;
 
     --state machine 
-    type input_state_type is (idle, buffer_input, output_state); 
+    type input_state_type is (idle, buffer_first_input, PingPong_state); 
     signal state_reg   : input_state_type;
 
     --component 
@@ -106,24 +106,24 @@ begin
                             counter_kmod16          <= counter_kmod16 + 1;
                             counter                 <= counter + 1;
                         end if; 
-                        state_reg   <= buffer_input;
+                        state_reg   <= buffer_first_input;
                     else
                         state_reg   <= idle; 
                     end if;
-                when buffer_input => 
+                when buffer_first_input => 
                     if (counter < BUFFER_SIZE-1) then 
                         counter_kmod16          <= counter_kmod16 + 1;
                         counter                 <= counter + 1;
-                        state_reg               <= buffer_input;
+                        state_reg               <= buffer_first_input;
                     else 
                         counter                 <= "00000000";
                         counter_kmod16          <= "0000";
-                        state_reg               <= output_state;
+                        state_reg               <= PingPong_state;
                         counter_out             <= counter_out + 1;
                         interleaver_out_valid   <= '1';
                         PingPong_flag   <= '1';
                     end if; 
-                when output_state =>
+                when PingPong_state =>
                     if (counter = BUFFER_SIZE-1) then 
                         PingPong_flag   <= not PingPong_flag;
                         counter                 <= "00000000";
@@ -131,17 +131,17 @@ begin
                     end if;
                     if(counter_out >= 0 and counter_out < BUFFER_SIZE2-1) then 
                         counter_out             <= counter_out + 1;
-                        state_reg               <= output_state;
+                        state_reg               <= PingPong_state;
                         interleaver_out_valid   <= '1';
-                        if (counter /= BUFFER_SIZE-1) then
+                        if (counter < BUFFER_SIZE-1) then
                             counter_kmod16          <= counter_kmod16 + 1;
                             counter                 <= counter + 1;
                         end if;
                     else 
                         counter_out                 <= 0;
-                        state_reg   <= output_state;
-                        -- state_reg                   <= idle;
-                        -- interleaver_out_valid       <= '0';
+                        state_reg   <= PingPong_state;
+                        counter_kmod16          <= counter_kmod16 + 1;
+                            counter                 <= counter + 1;
                     end if;
                     if ( (FEC_encoder_out_valid = '0') and (counter_out = 191 or counter_out = 383) ) then 
                         counter_out                 <= 0;
