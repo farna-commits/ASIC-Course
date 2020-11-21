@@ -111,9 +111,6 @@ begin
                         state_reg   <= idle; 
                     end if;
                 when buffer_input => 
-                    -- if (counter = BUFFER_SIZE-2) then 
-                    --     PingPong_flag   <= '1';
-                    -- end if;
                     if (counter < BUFFER_SIZE-1) then 
                         counter_kmod16          <= counter_kmod16 + 1;
                         counter                 <= counter + 1;
@@ -128,7 +125,7 @@ begin
                     end if; 
                 when output_state =>
                     if (counter = BUFFER_SIZE-1) then 
-                        PingPong_flag   <= '0';
+                        PingPong_flag   <= not PingPong_flag;
                         counter                 <= "00000000";
                         counter_kmod16          <= "0000";
                     end if;
@@ -141,6 +138,12 @@ begin
                             counter                 <= counter + 1;
                         end if;
                     else 
+                        counter_out                 <= 0;
+                        state_reg   <= output_state;
+                        -- state_reg                   <= idle;
+                        -- interleaver_out_valid       <= '0';
+                    end if;
+                    if ( (FEC_encoder_out_valid = '0') and (counter_out = 191 or counter_out = 383) ) then 
                         counter_out                 <= 0;
                         state_reg                   <= idle;
                         interleaver_out_valid       <= '0';
