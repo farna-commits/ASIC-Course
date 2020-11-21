@@ -62,6 +62,11 @@ begin
             wait for CLK_PERIOD; 
         end loop;
 
+        for i in 191 downto 0 loop 
+            test_in_bit <= test_in_vector(i);
+            wait for CLK_PERIOD; 
+        end loop;
+
         test_in_bit <= 'X';
         -- wait until flag = '1'; 
         en  <= '0';
@@ -72,6 +77,11 @@ begin
     process begin 
         wait until out_valid = '1'; 
         wait for 2 ns; 
+        for i in 191 downto 0 loop 
+            test_out_vector(i) <= test_out_bit; 
+            wait for CLK_PERIOD; 
+        end loop;
+
         for i in 191 downto 0 loop 
             test_out_vector(i) <= test_out_bit; 
             wait for CLK_PERIOD; 
