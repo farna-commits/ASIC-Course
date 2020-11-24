@@ -21,9 +21,10 @@ end states_FEC_encoder;
 architecture states_FEC_encoder_arch of states_FEC_encoder is
     --constant 
     constant BUFFER_SIZE                      	: integer := 96; 
+    constant BUFFER_SIZE2                     	: integer := 192; 
     --signals 	
     signal   shift_reg                        	: std_logic_vector(5 downto 0); 
-    signal   shift_reg_initial                 	: std_logic_vector(5 downto 0); 
+    signal   shift_reg2                	        : std_logic_vector(5 downto 0); 
     signal   x_output_signal, y_output_signal 	: std_logic; 
     signal   flag                             	: std_logic; 
     signal   counter_buffer_input             	: integer; 
@@ -86,7 +87,7 @@ begin
         
     --ram's signals assign      
     clock	    <= clk_50mhz;	 
-    address_a   <= std_logic_vector(to_unsigned(counter_buffer_input, address_a'length)); 
+    address_a   <= std_logic_vector(to_unsigned(counter_buffer_input, address_a'length)) when PingPong_flag = '0' else std_logic_vector(to_unsigned(counter_buffer_input + 96, address_a'length)); 
     address_b   <= std_logic_vector(to_unsigned(counter_shift_and_output, address_b'length));
     data_a(0)   <= data_in; 
     wren_a      <= rand_out_valid; 
@@ -97,15 +98,18 @@ begin
     x_output  <= x_output_signal; 
     y_output  <= y_output_signal; 
 
-    data_out  <= ( q_b(0) xor shift_reg(0) xor shift_reg(3) xor shift_reg(4) xor shift_reg(5) ) when ( (output_state_reg = idle and finished_tail_flag = '1') or output_state_reg = x) else 
-    (q_b(0) xor shift_reg(0) xor shift_reg(1) xor shift_reg(3) xor shift_reg(4)) when (output_state_reg = y); 
+    data_out  <= (q_b(0) xor shift_reg(0) xor shift_reg(3) xor shift_reg(4) xor shift_reg(5) ) when ( PingPong_flag = '1' and ((output_state_reg = idle and finished_tail_flag = '1') or output_state_reg = x)) else 
+                 (q_b(0) xor shift_reg(0) xor shift_reg(1) xor shift_reg(3) xor shift_reg(4)) when (PingPong_flag = '1' and output_state_reg = y) else 
+                 (q_b(0) xor shift_reg2(0) xor shift_reg2(3) xor shift_reg2(4) xor shift_reg2(5) ) when ( PingPong_flag = '0' and ((output_state_reg = idle and finished_tail_flag = '1') or output_state_reg = x)) else
+                 (q_b(0) xor shift_reg2(0) xor shift_reg2(1) xor shift_reg2(3) xor shift_reg2(4)) when (PingPong_flag = '0' and output_state_reg = y); 
+
+
     FEC_encoder_out_valid	<= '1' when (input_state_reg = shifting) else '0';	
     
                                              
     -----------------------------------------------------------------------------state machine 1 -----------------------------------------------------------------------------
     process (reset, clk_50mhz) begin 
         if (reset = '1') then 
-            data_in_buffer              <= (others => '0'); 
             counter_buffer_input        <= 0;
             shift_reg                   <= (others => '0');
             counter_shift_and_output    <= 0;
@@ -127,25 +131,50 @@ begin
 
                     if (counter_buffer_input < BUFFER_SIZE-1) then
                         input_state_reg                     	<= buffer_input; 
-                        data_in_buffer(counter_buffer_input) 	<= data_in; 
                         counter_buffer_input                 	<= counter_buffer_input + 1;
                     elsif (counter_buffer_input = BUFFER_SIZE-1) then 
-                        data_in_buffer(counter_buffer_input) 	<= data_in; 
-                        counter_buffer_input                 	<= counter_buffer_input + 1;
+                        counter_buffer_input                 	<= 0;
                         --get tail bits                         
                         input_state_reg    	                    <= shifting; 
                         finished_tail_flag	                    <= '1';
                         counter_shift_and_output                <= counter_shift_and_output + 1;
                         PingPong_flag                           <= '1';
                     end if;
-				when shifting => 
-                    if (counter_shift_and_output < BUFFER_SIZE) then 
+                when shifting => 
+                    -- tail bits 
+                    if (counter_buffer_input = 90 or counter_buffer_input = 91 or counter_buffer_input = 92 or counter_buffer_input = 93 or counter_buffer_input = 94 or counter_buffer_input = 95) then 
+                        if (PingPong_flag = '1') then 
+                            shift_reg (counter_buffer_input - 90) <= data_in; 
+                        else
+                            shift_reg2(counter_buffer_input - 90) <= data_in; 
+                        end if;
+                    end if;
+
+                    if (counter_buffer_input = BUFFER_SIZE-1) then 
+                        PingPong_flag   <= not PingPong_flag;   
+                        counter_buffer_input    <= 0;        
+                    end if;
+
+                    if (counter_shift_and_output < BUFFER_SIZE2) then 
                         input_state_reg            	<= shifting;
                         shift_reg                   <= q_b(0) & shift_reg(5 downto 1); 
+                        shift_reg2                  <= q_b(0) & shift_reg2(5 downto 1); 
                         counter_shift_and_output    <= counter_shift_and_output + 1;
-                    elsif (counter_shift_and_output = 96) then 
-                        input_state_reg            	<= idle;
+                        if (counter_buffer_input < BUFFER_SIZE-1) then 
+                            counter_buffer_input    <= counter_buffer_input + 1;
+                        end if;
+                    else
+                        input_state_reg            	<= shifting;
+                        counter_shift_and_output    <= 0; 
+                        counter_buffer_input        <= counter_buffer_input + 1;
                     end if;
+
+                    --go to idle 
+                    if (rand_out_valid = '0' and (counter_shift_and_output = 96 or counter_shift_and_output = 192)) then 
+                        counter_shift_and_output    <= 0;  
+                        input_state_reg            	<= idle;                              
+                    end if;
+
             end case;
         end if;
     end process;
@@ -165,24 +194,22 @@ begin
 			case output_state_reg is 
 				when idle => 
 					if (counter_shift_and_output = 1) then 
-						-- x_output_signal     	<= data_in_buffer(counter_shift_and_output) xor shift_reg(0) xor shift_reg(3) xor shift_reg(4) xor shift_reg(5);
 						output_state_reg		<= y; 
 						flag					<= '1';					
 					else 
 						output_state_reg		<= idle;
 					end if; 
 				when x => 
-						-- x_output_signal     	<= data_in_buffer(counter_shift_and_output) xor shift_reg(0) xor shift_reg(3) xor shift_reg(4) xor shift_reg(5);
-						flag					<= '1';
+					flag					<= '1';
 					if (counter_shift_and_output <= BUFFER_SIZE) then 										
 						output_state_reg		<= y;
 					end if;
 				when y => 
-						-- y_output_signal         <= data_in_buffer(counter_shift_and_output) xor shift_reg(0) xor shift_reg(1) xor shift_reg(3) xor shift_reg(4);
-						flag					<= '0';	
+					flag					<= '0';	
 					if (counter_shift_and_output < BUFFER_SIZE and FEC_encoder_out_valid = '1') then 		  										
 						output_state_reg		<= x;
-					else 
+                    end if;
+                    if (FEC_encoder_out_valid = '0' and (counter_shift_and_output = 96 or counter_shift_and_output = 192)) then 
 						output_state_reg		<= idle;						
 					end if;
 			end case;
