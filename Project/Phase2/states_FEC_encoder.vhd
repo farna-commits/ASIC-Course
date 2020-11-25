@@ -201,12 +201,12 @@ begin
 					end if; 
 				when x => 
 					flag					<= '1';
-					if (counter_shift_and_output <= BUFFER_SIZE) then 										
+					if (counter_shift_and_output <= BUFFER_SIZE2) then 										
 						output_state_reg		<= y;
 					end if;
 				when y => 
 					flag					<= '0';	
-					if (counter_shift_and_output < BUFFER_SIZE and FEC_encoder_out_valid = '1') then 		  										
+					if (counter_shift_and_output < BUFFER_SIZE2 and FEC_encoder_out_valid = '1') then 		  										
 						output_state_reg		<= x;
                     end if;
                     if (FEC_encoder_out_valid = '0' and (counter_shift_and_output = 96 or counter_shift_and_output = 192)) then 
