@@ -4,7 +4,6 @@ use IEEE.NUMERIC_STD.ALL;
 LIBRARY altera_mf;
 USE altera_mf.altera_mf_components.all;
 
--- Note: senstivity list of a syncronus process must have clk and async reset only
 
 entity states_FEC_encoder is 
     port(
@@ -25,22 +24,17 @@ architecture states_FEC_encoder_arch of states_FEC_encoder is
     --signals 	
     signal   shift_reg                        	: std_logic_vector(5 downto 0); 
     signal   shift_reg2                	        : std_logic_vector(5 downto 0); 
-    signal   x_output_signal, y_output_signal 	: std_logic; 
-    signal   flag                             	: std_logic; 
     signal   counter_buffer_input             	: integer; 
     signal   counter_shift_and_output         	: integer; 
-	signal   finished_buffering_flag          	: std_logic;
 	signal   finished_tail_flag          	  	: std_logic;
-    signal   finished_outputting_flag         	: std_logic;
-    signal   data_in_buffer                   	: std_logic_vector(BUFFER_SIZE-1 downto 0);
     signal   FEC_encoder_out_valid              : std_logic; 
     signal   PingPong_flag          	  	    : std_logic;
 
     --state machines 
     type input_state_type is (idle, buffer_first_input, PingPong_state); 
-	signal input_state_reg, input_state_next    : input_state_type; 
+	signal input_state_reg    : input_state_type; 
 	type output_state_type is (idle, x, y); 
-    signal output_state_reg, output_state_next  : output_state_type;
+    signal output_state_reg   : output_state_type;
     
     --RAM 
     component FEC_RAM_2port is 
@@ -93,10 +87,10 @@ begin
     wren_a      <= rand_out_valid; 
     FEC_encoder_out_valid_out <= FEC_encoder_out_valid; 
 
-    data_out  <= (q_b(0) xor shift_reg(0) xor shift_reg(3) xor shift_reg(4) xor shift_reg(5) ) when ( PingPong_flag = '1' and ((output_state_reg = idle and finished_tail_flag = '1') or output_state_reg = x)) else 
-                 (q_b(0) xor shift_reg(0) xor shift_reg(1) xor shift_reg(3) xor shift_reg(4)) when (PingPong_flag = '1' and output_state_reg = y) else 
-                 (q_b(0) xor shift_reg2(0) xor shift_reg2(3) xor shift_reg2(4) xor shift_reg2(5) ) when ( PingPong_flag = '0' and ((output_state_reg = idle and finished_tail_flag = '1') or output_state_reg = x)) else
-                 (q_b(0) xor shift_reg2(0) xor shift_reg2(1) xor shift_reg2(3) xor shift_reg2(4)) when (PingPong_flag = '0' and output_state_reg = y); 
+    data_out  <= (q_b(0) xor shift_reg(0)   xor shift_reg(3)    xor shift_reg(4)    xor shift_reg(5))       when (PingPong_flag = '1' and ((output_state_reg = idle and finished_tail_flag = '1') or output_state_reg = x)) else 
+                 (q_b(0) xor shift_reg(0)   xor shift_reg(1)    xor shift_reg(3)    xor shift_reg(4))       when (PingPong_flag = '1' and output_state_reg = y) else 
+                 (q_b(0) xor shift_reg2(0)  xor shift_reg2(3)   xor shift_reg2(4)   xor shift_reg2(5))      when (PingPong_flag = '0' and ((output_state_reg = idle and finished_tail_flag = '1') or output_state_reg = x)) else
+                 (q_b(0) xor shift_reg2(0)  xor shift_reg2(1)   xor shift_reg2(3)   xor shift_reg2(4))      when (PingPong_flag = '0' and output_state_reg = y); 
 
 
     FEC_encoder_out_valid	<= '1' when (input_state_reg = PingPong_state) else '0';	
@@ -148,7 +142,6 @@ begin
                     if (counter_shift_and_output < BUFFER_SIZE and PingPong_flag = '1') then 
                         input_state_reg            	<= PingPong_state;
                         shift_reg                   <= q_b(0) & shift_reg(5 downto 1); 
-                        -- shift_reg2                  <= q_b(0) & shift_reg2(5 downto 1); 
                         counter_shift_and_output    <= counter_shift_and_output + 1;
                         if (counter_buffer_input < BUFFER_SIZE-1) then 
                             counter_buffer_input    <= counter_buffer_input + 1;
@@ -157,7 +150,6 @@ begin
                     
                     elsif((counter_shift_and_output >= BUFFER_SIZE and counter_shift_and_output < BUFFER_SIZE2) and PingPong_flag = '0') then 
                         input_state_reg            	<= PingPong_state;
-                        -- shift_reg                   <= q_b(0) & shift_reg(5 downto 1); 
                         shift_reg2                  <= q_b(0) & shift_reg2(5 downto 1); 
                         counter_shift_and_output    <= counter_shift_and_output + 1;
                         if (counter_buffer_input < BUFFER_SIZE-1) then 
@@ -199,32 +191,34 @@ begin
 -----------------------------------------------------------------------------state machine 2 -----------------------------------------------------------------------------
 	process (clk_100mhz, reset) begin 
 	if (reset = '1') then 
-		x_output_signal         <= '0';
-		y_output_signal         <= '0';
-		flag					<= '1'; 
+        output_state_reg   <= idle;                     
 	elsif(rising_edge(clk_100mhz)) then 
         if (finished_tail_flag = '1') then
 			case output_state_reg is 
 				when idle => 
 					if (counter_shift_and_output = 1) then 
-						output_state_reg		<= y; 
-						flag					<= '1';					
-					else 
-						output_state_reg		<= idle;
+                        output_state_reg		<= y; 
+                    else 
+                        output_state_reg		<= idle;
 					end if; 
 				when x => 
-					flag					<= '1';
 					if (counter_shift_and_output <= BUFFER_SIZE2) then 										
-						output_state_reg		<= y;
+                        output_state_reg		<= y;
+                    else 
+                        output_state_reg		<= x;
 					end if;
-				when y => 
-					flag					<= '0';	
+                when y => 
+                    if (FEC_encoder_out_valid = '0' and (counter_shift_and_output = BUFFER_SIZE-1 or counter_shift_and_output = BUFFER_SIZE2-1)) then 
+                        output_state_reg		<= idle;
+                    else 
+                        output_state_reg		<= y;					
+					end if;
 					if (counter_shift_and_output < BUFFER_SIZE2 and FEC_encoder_out_valid = '1') then 		  										
-						output_state_reg		<= x;
+                        output_state_reg		<= x;
+                    else 
+                        output_state_reg		<= y;
                     end if;
-                    if (FEC_encoder_out_valid = '0' and (counter_shift_and_output = 96 or counter_shift_and_output = 192)) then 
-						output_state_reg		<= idle;						
-					end if;
+                    
 			end case;
 		end if; 
 	end if;
