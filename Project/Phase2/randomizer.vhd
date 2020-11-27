@@ -21,7 +21,7 @@ architecture randomizer_arch of randomizer is
     signal seed_reg                         : std_logic_vector(SEED_WIDTH-1 downto 0);   --seeding signal
     signal seed_reg2                        : std_logic_vector(SEED_WIDTH-1 downto 0);   --seeding signal
     signal xor_1                            : std_logic;    --xoring signal 
-    
+    signal counter_reset_seed               : integer; 
 begin
     
     --continuous assignments
@@ -35,14 +35,19 @@ begin
     process (clk_50mhz, reset) begin 
         --initialize 
         if (reset = '1') then --my reset is active high
-            seed_reg        <= (others => '0');    --init with zeros 
+            seed_reg            <= (others => '0');    --init with zeros 
+            counter_reset_seed  <= 0;
         elsif (rising_edge(clk_50mhz)) then 
         -- if reset is high then operate, but check enable and load first 
             if(load = '1') then
                 seed_reg <= seed_reg2;    --initialize the seed reg with input seed
             elsif(rand_in_ready = '1') then
-                seed_reg        <= seed_reg(SEED_WIDTH-2 downto 0) & xor_1;    --shift left by 1 and xor with xoring result of last 2 bits
-                --rand_out_valid  <= '1';
+                seed_reg            <= seed_reg(SEED_WIDTH-2 downto 0) & xor_1;    --shift left by 1 and xor with xoring result of last 2 bits
+                counter_reset_seed  <= counter_reset_seed + 1;
+                if (counter_reset_seed = 95) then 
+                    counter_reset_seed  <= 0;
+                    seed_reg            <= seed_reg2; 
+                end if;
             end if;
         end if;
     end process; 
