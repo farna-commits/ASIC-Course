@@ -74,23 +74,11 @@ begin
             wait for CLK_50_PERIOD;                
         end loop;  
 
-        for i in 95 downto 0 loop    
-            test_in_bit <= test_in_vector(i); 
-            wait for CLK_50_PERIOD;                
-        end loop;  
+        -- for i in 95 downto 0 loop    
+        --     test_in_bit <= test_in_vector(i); 
+        --     wait for CLK_50_PERIOD;                
+        -- end loop;  
 
-        for i in 95 downto 0 loop    
-            test_in_bit <= test_in_vector(i); 
-            wait for CLK_50_PERIOD;                
-        end loop;  
-        for i in 95 downto 0 loop    
-            test_in_bit <= test_in_vector(i); 
-            wait for CLK_50_PERIOD;                
-        end loop; 
-        for i in 95 downto 0 loop    
-            test_in_bit <= test_in_vector(i); 
-            wait for CLK_50_PERIOD;                
-        end loop; 
         en  <= '0';
         wait; --makes process executes once 
     end process;
