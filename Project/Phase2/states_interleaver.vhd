@@ -87,7 +87,8 @@ begin
 
     --continous 
     mk_pos  <= ( (12 * to_integer(counter_kmod16)) + (to_integer(counter) / 16) ) when (PingPong_flag = '0') else
-               ( ((12 * to_integer(counter_kmod16)) + (to_integer(counter) / 16) ) + 192) when (PingPong_flag = '1'); 
+               ( ((12 * to_integer(counter_kmod16)) + (to_integer(counter) / 16) ) + 192) when (PingPong_flag = '1') else
+                0; 
     
     
     process(clk_100mhz, reset) begin 
@@ -100,7 +101,8 @@ begin
             PingPong_flag               <= '0';
         elsif(rising_edge(clk_100mhz)) then 
             case state_reg is 
-                when idle =>                     
+                when idle =>      
+                    interleaver_out_valid   <= '0';               
                     if (FEC_encoder_out_valid = '1') then      
                         if (counter < BUFFER_SIZE-1) then 
                             counter_kmod16          <= counter_kmod16 + 1;
@@ -125,7 +127,7 @@ begin
                     end if; 
                 when PingPong_state =>
                     if (counter = BUFFER_SIZE-1) then 
-                        PingPong_flag   <= not PingPong_flag;
+                        PingPong_flag           <= not PingPong_flag;
                         counter                 <= "00000000";
                         counter_kmod16          <= "0000";
                     end if;
@@ -138,15 +140,15 @@ begin
                             counter                 <= counter + 1;
                         end if;
                     else 
-                        counter_out                 <= 0;
-                        state_reg   <= PingPong_state;
+                        counter_out             <= 0;
+                        state_reg               <= PingPong_state;
                         counter_kmod16          <= counter_kmod16 + 1;
-                            counter                 <= counter + 1;
+                        counter                 <= counter + 1;
                     end if;
                     if ( (FEC_encoder_out_valid = '0') and (counter_out = 191 or counter_out = 383) ) then 
-                        counter_out                 <= 0;
-                        state_reg                   <= idle;
-                        interleaver_out_valid       <= '0';
+                        counter_out             <= 0;
+                        state_reg               <= idle;
+                        -- interleaver_out_valid   <= '0';
                     end if;
             end case;
         end if;
