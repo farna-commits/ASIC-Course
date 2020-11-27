@@ -10,7 +10,6 @@ entity states_FEC_encoder is
         clk_50mhz, clk_100mhz                 	: in    std_logic; 
         reset, rand_out_valid                 	: in    std_logic; 
         data_in                               	: in    std_logic; 
-        x_output, y_output                    	: out   std_logic; 
         FEC_encoder_out_valid_out             	: out   std_logic; 
         data_out                              	: out   std_logic
 
@@ -90,7 +89,8 @@ begin
     data_out  <= (q_b(0) xor shift_reg(0)   xor shift_reg(3)    xor shift_reg(4)    xor shift_reg(5))       when (PingPong_flag = '1' and ((output_state_reg = idle and finished_tail_flag = '1') or output_state_reg = x)) else 
                  (q_b(0) xor shift_reg(0)   xor shift_reg(1)    xor shift_reg(3)    xor shift_reg(4))       when (PingPong_flag = '1' and output_state_reg = y) else 
                  (q_b(0) xor shift_reg2(0)  xor shift_reg2(3)   xor shift_reg2(4)   xor shift_reg2(5))      when (PingPong_flag = '0' and ((output_state_reg = idle and finished_tail_flag = '1') or output_state_reg = x)) else
-                 (q_b(0) xor shift_reg2(0)  xor shift_reg2(1)   xor shift_reg2(3)   xor shift_reg2(4))      when (PingPong_flag = '0' and output_state_reg = y); 
+                 (q_b(0) xor shift_reg2(0)  xor shift_reg2(1)   xor shift_reg2(3)   xor shift_reg2(4))      when (PingPong_flag = '0' and output_state_reg = y) else 
+                 '0'; 
 
 
     FEC_encoder_out_valid	<= '1' when (input_state_reg = PingPong_state) else '0';	
@@ -105,6 +105,7 @@ begin
             finished_tail_flag			<= '0';
             PingPong_flag               <= '0';
         elsif (rising_edge(clk_50mhz)) then 
+            input_state_reg<=input_state_reg;
             case input_state_reg is 
                 when idle => 
                     if (rand_out_valid = '1') then 
@@ -208,7 +209,7 @@ begin
                         output_state_reg		<= x;
 					end if;
                 when y => 
-                    if (FEC_encoder_out_valid = '0' and (counter_shift_and_output = BUFFER_SIZE-1 or counter_shift_and_output = BUFFER_SIZE2-1)) then 
+                    if (FEC_encoder_out_valid = '0' and (counter_shift_and_output = BUFFER_SIZE+1 or counter_shift_and_output = BUFFER_SIZE2+1)) then 
                         output_state_reg		<= idle;
                     else 
                         output_state_reg		<= y;					
