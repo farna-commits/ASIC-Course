@@ -63,7 +63,7 @@ begin
     process begin 
         reset <= '1'; --initialize values 
         en    <= '0';
-        wait for CLK_50_HALF_PERIOD + 5 ns;     --make sure a pos edge came before changing the reset 
+        wait for CLK_50_HALF_PERIOD;     --make sure a pos edge came before changing the reset 
         reset <= '0'; 
         load <= '1';    --take seed into module 
         wait for CLK_50_PERIOD; --bec of 75 ns edge the next pos edge so make sure a pos edge came 
@@ -78,7 +78,19 @@ begin
             test_in_bit <= test_in_vector(i); 
             wait for CLK_50_PERIOD;                
         end loop;  
-        
+
+        for i in 95 downto 0 loop    
+            test_in_bit <= test_in_vector(i); 
+            wait for CLK_50_PERIOD;                
+        end loop;  
+        for i in 95 downto 0 loop    
+            test_in_bit <= test_in_vector(i); 
+            wait for CLK_50_PERIOD;                
+        end loop; 
+        for i in 95 downto 0 loop    
+            test_in_bit <= test_in_vector(i); 
+            wait for CLK_50_PERIOD;                
+        end loop; 
         en  <= '0';
         wait; --makes process executes once 
     end process;
