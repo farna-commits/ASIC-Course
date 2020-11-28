@@ -24,6 +24,7 @@ package Phase1_Package is
     constant ZeroPointSeven                     : std_logic_vector(15 downto 0)  := "0101101001111111";
     constant NegativeZeroPointSeven             : std_logic_vector(15 downto 0)  := "1010010110000001";
     constant INPUT_MODULATION_VECTOR_CONST      : std_logic_vector(191 downto 0) := x"4B047DFA42F2A5D5F61C021A5851E9A309A24FD58086BD1E";
+    constant INPUT_MODULATION_VECTOR_CONST2      : std_logic_vector(191 downto 0) := x"4B047DFA42F2A5D5F61C021A5851E9A309A24FD58087BD1E";
 --=============================================================================================================================================
 
 
