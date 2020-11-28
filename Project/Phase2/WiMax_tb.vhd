@@ -12,7 +12,7 @@ architecture tb_arch of WiMax_tb is
     --component 
     component WiMax is 
         port(
-            clk_50mhz, clk_100mhz                 	: in    std_logic; 
+            clk_50mhz                           	: in    std_logic; 
             reset                 	                : in    std_logic; 
             en                 	                    : in    std_logic; 
             load               	                    : in    std_logic; 
@@ -45,7 +45,6 @@ begin
     wm1: WiMax port map 
     (
         clk_50mhz       => clk_50,
-        clk_100mhz      => clk_100,
         reset           => reset,            
         en              => en,    
         load            => load,    	   
@@ -57,14 +56,15 @@ begin
 
     --clk process 
     clk_50 <= not clk_50 after CLK_50_HALF_PERIOD; 
-    clk_100 <= not clk_100 after CLK_100_HALF_PERIOD; 
+    -- -- clk_100 <= not clk_100 after CLK_100_HALF_PERIOD; 
 
     --assigning input bits from the vector 
     process begin 
         reset <= '1'; --initialize values 
         en    <= '0';
-        wait for CLK_50_HALF_PERIOD;     --make sure a pos edge came before changing the reset 
+        wait for 3*CLK_50_HALF_PERIOD;     --make sure a pos edge came before changing the reset 
         reset <= '0'; 
+        wait for 2*CLK_50_HALF_PERIOD;
         load <= '1';    --take seed into module 
         wait for CLK_50_PERIOD; --bec of 75 ns edge the next pos edge so make sure a pos edge came 
         load <= '0'; 
@@ -74,10 +74,22 @@ begin
             wait for CLK_50_PERIOD;                
         end loop;  
 
-        -- for i in 95 downto 0 loop    
-        --     test_in_bit <= test_in_vector(i); 
-        --     wait for CLK_50_PERIOD;                
-        -- end loop;  
+        for i in 95 downto 0 loop    
+            test_in_bit <= test_in_vector(i); 
+            wait for CLK_50_PERIOD;                
+        end loop;  
+        for i in 95 downto 0 loop    
+            test_in_bit <= test_in_vector(i); 
+            wait for CLK_50_PERIOD;                
+        end loop;  
+        for i in 95 downto 0 loop    
+            test_in_bit <= test_in_vector(i); 
+            wait for CLK_50_PERIOD;                
+        end loop;  
+        for i in 95 downto 0 loop    
+            test_in_bit <= test_in_vector(i); 
+            wait for CLK_50_PERIOD;                
+        end loop;  
 
         en  <= '0';
         wait; --makes process executes once 
