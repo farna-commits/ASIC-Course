@@ -3,6 +3,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 LIBRARY altera_mf;
 USE altera_mf.altera_mf_components.all;
+use work.Phase1_Package.all;
 
 entity WiMax_tb is 
 end WiMax_tb;
@@ -23,23 +24,17 @@ architecture tb_arch of WiMax_tb is
         );
     end component;
 
-    --constants 
-    constant CLK_50_PERIOD                        : Time := 20 ns; 
-    constant CLK_50_HALF_PERIOD                   : Time := CLK_50_PERIOD / 2; 
-    constant CLK_100_PERIOD                       : Time := 10 ns; 
-    constant CLK_100_HALF_PERIOD                  : Time := CLK_100_PERIOD / 2;
-
     signal   clk_50                               : std_logic := '0'; 
-    signal   clk_100                              : std_logic := '1'; 
     signal   reset                                : std_logic; 
     signal   en                                   : std_logic; 
     signal   load                                 : std_logic; 
-    signal   test_in_vector                       : std_logic_vector(95 downto 0) := x"ACBCD2114DAE1577C6DBF4C9";
-    signal   test_out_vector                      : std_logic_vector(191 downto 0) := x"000000000000000000000000000000000000000000000000";
+    signal   test_in_vector                       : std_logic_vector(95 downto 0) := INPUT_RANDOMIZER_VECTOR_CONST;
+    signal   demodulation_vector                  : std_logic_vector(191 downto 0) := (others => '0');
     signal   test_in_bit                          : std_logic;
     signal   test_out1_bit                        : std_logic_vector(15 downto 0) ;
     signal   test_out2_bit                        : std_logic_vector(15 downto 0) ;
     signal   out_valid                            : std_logic;
+    signal   xfkd                                 : std_logic := '0';
 begin 
     --instantiations 
     wm1: WiMax port map 
@@ -56,7 +51,6 @@ begin
 
     --clk process 
     clk_50 <= not clk_50 after CLK_50_HALF_PERIOD; 
-    -- -- clk_100 <= not clk_100 after CLK_100_HALF_PERIOD; 
 
     --assigning input bits from the vector 
     process begin 
@@ -69,56 +63,89 @@ begin
         wait for CLK_50_PERIOD; --bec of 75 ns edge the next pos edge so make sure a pos edge came 
         load <= '0'; 
         en <= '1'; 
-        for i in 95 downto 0 loop    
-            test_in_bit <= test_in_vector(i); 
-            wait for CLK_50_PERIOD;                
-        end loop;  
-
-        for i in 95 downto 0 loop    
-            test_in_bit <= test_in_vector(i); 
-            wait for CLK_50_PERIOD;                
-        end loop;  
-        for i in 95 downto 0 loop    
-            test_in_bit <= test_in_vector(i); 
-            wait for CLK_50_PERIOD;                
-        end loop;  
-        for i in 95 downto 0 loop    
-            test_in_bit <= test_in_vector(i); 
-            wait for CLK_50_PERIOD;                
-        end loop;  
-        for i in 95 downto 0 loop    
-            test_in_bit <= test_in_vector(i); 
-            wait for CLK_50_PERIOD;                
-        end loop;  
-
+        --Inputting steams 
+        fill_96_inputs_procedure(0, 95, test_in_vector, test_in_bit);
+        fill_96_inputs_procedure(0, 95, test_in_vector, test_in_bit);
+        fill_96_inputs_procedure(0, 95, test_in_vector, test_in_bit);
+        fill_96_inputs_procedure(0, 95, test_in_vector, test_in_bit);
+        fill_96_inputs_procedure(0, 95, test_in_vector, test_in_bit);        
         en  <= '0';
         wait; --makes process executes once 
     end process;
 
-    -- --demodulation test 
-    -- process 
-    -- variable i : integer := 191;
-    -- begin         
-    --     wait until out_valid = '1'; 
-    --     -- wait on test_out2_bit;
-    --     wait for 2 ns; 
-    --     while (i > 0) loop 
-    --         if (test_out1_bit = ZeroPointSeven and test_out2_bit = ZeroPointSeven) then 
-    --             demodulation_vector(i)      <= '0';
-    --             demodulation_vector(i-1)    <= '0';
-    --         elsif(test_out1_bit = NegativeZeroPointSeven and test_out2_bit = NegativeZeroPointSeven) then 
-    --             demodulation_vector(i)      <= '1';
-    --             demodulation_vector(i-1)    <= '1';
-    --         elsif(test_out1_bit = NegativeZeroPointSeven and test_out2_bit = ZeroPointSeven) then 
-    --             demodulation_vector(i)      <= '1';
-    --             demodulation_vector(i-1)    <= '0';
-    --         elsif(test_out1_bit = ZeroPointSeven and test_out2_bit = NegativeZeroPointSeven) then
-    --             demodulation_vector(i)      <= '0';
-    --             demodulation_vector(i-1)    <= '1';
-    --         end if;
-    --         i := i - 2; 
-    --         wait for 2 * CLK_100_PERIOD;
-    --     end loop;
-    --     wait;
-    -- end process;
+    --demodulation test 
+    process 
+    variable i : integer := 191;
+    --demodulation for testing 
+    procedure demodulation_procedure is 
+        begin 
+            demodulation_vector <= (others => '0');
+            while (i > 0) loop 
+                if (test_out1_bit = ZeroPointSeven and test_out2_bit = ZeroPointSeven) then 
+                    demodulation_vector(i)      <= '0';
+                    demodulation_vector(i-1)    <= '0';
+                elsif(test_out1_bit = NegativeZeroPointSeven and test_out2_bit = NegativeZeroPointSeven) then 
+                    demodulation_vector(i)      <= '1';
+                    demodulation_vector(i-1)    <= '1';
+                elsif(test_out1_bit = NegativeZeroPointSeven and test_out2_bit = ZeroPointSeven) then 
+                    demodulation_vector(i)      <= '1';
+                    demodulation_vector(i-1)    <= '0';
+                elsif(test_out1_bit = ZeroPointSeven and test_out2_bit = NegativeZeroPointSeven) then
+                    demodulation_vector(i)      <= '0';
+                    demodulation_vector(i-1)    <= '1';
+                end if;
+                i := i - 2; 
+                wait for 2 * CLK_100_PERIOD;
+            end loop;
+        end demodulation_procedure;
+    begin         
+        wait until out_valid = '1'; 
+        wait for 2 ns; 
+        report START_SIMULATION_MSG;
+        report "--------Demodulating (5) output streams-------------" severity note;
+
+        report "Starting Demodulation of modulated output 1 stream: " severity note;
+        demodulation_procedure;
+        report "Demodulation finished. " severity note;
+        assert demodulation_vector /= INPUT_MODULATION_VECTOR_CONST
+            report "Demodulated vector is equal to the input one, test succeeded on stream 1" severity note; 
+            assert demodulation_vector = INPUT_MODULATION_VECTOR_CONST
+                report "Demodulated vector is not equal to input 1 stream vector, test failed" severity error;
+                
+        report "Starting Demodulation of modulated output 2 stream: " severity note;
+        demodulation_procedure;
+        report "Demodulation finished. " severity note;
+        assert demodulation_vector /= INPUT_MODULATION_VECTOR_CONST
+            report "Demodulated vector is equal to the input one, test succeeded on stream 2" severity note; 
+            assert demodulation_vector = INPUT_MODULATION_VECTOR_CONST
+                report "Demodulated vector is not equal to input 2 stream vector, test failed" severity error;      
+                
+        report "Starting Demodulation of modulated output 3 stream: " severity note;
+        demodulation_procedure;
+        report "Demodulation finished. " severity note;
+        assert demodulation_vector /= INPUT_MODULATION_VECTOR_CONST
+            report "Demodulated vector is equal to the input one, test succeeded on stream 3" severity note; 
+            assert demodulation_vector = INPUT_MODULATION_VECTOR_CONST
+                report "Demodulated vector is not equal to input 3 stream vector, test failed" severity error;   
+
+        report "Starting Demodulation of modulated output 4 stream: " severity note;
+        demodulation_procedure;
+        report "Demodulation finished. " severity note;
+        assert demodulation_vector /= INPUT_MODULATION_VECTOR_CONST
+            report "Demodulated vector is equal to the input one, test succeeded on stream 4" severity note; 
+            assert demodulation_vector = INPUT_MODULATION_VECTOR_CONST
+                report "Demodulated vector is not equal to input 4 stream vector, test failed" severity error;   
+
+        report "Starting Demodulation of modulated output 5 stream: " severity note;
+        demodulation_procedure;
+        report "Demodulation finished. " severity note;
+        assert demodulation_vector /= INPUT_MODULATION_VECTOR_CONST
+            report "Demodulated vector is equal to the input one, test succeeded on stream 5" severity note; 
+            assert demodulation_vector = INPUT_MODULATION_VECTOR_CONST
+                report "Demodulated vector is not equal to input 5 stream vector, test failed" severity error;   
+
+        report END_SIMULATION_MSG;
+        xfkd <= '1';
+        wait;
+    end process;
 end tb_arch;
