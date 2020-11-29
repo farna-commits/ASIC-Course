@@ -1,3 +1,5 @@
+--# vcom -reportprogress 300 -93 -work work D:/AUC/Semester9(Fall2020)/ASIC/repo/ASIC-Course/Project/Phase2/WiMax_tb.vhd 
+
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
@@ -78,7 +80,8 @@ begin
     variable i : integer := 191;
     --demodulation for testing 
     procedure demodulation_procedure is 
-        begin 
+        begin   
+            i := 191;
             demodulation_vector <= (others => '0');
             while (i > 0) loop 
                 if (test_out1_bit = ZeroPointSeven and test_out2_bit = ZeroPointSeven) then 
