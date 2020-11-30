@@ -15,14 +15,14 @@ architecture tb_arch of WiMax_tb is
     --component 
     component WiMax is 
         port(
-            clk_50mhz                           	: in    std_logic; 
-            reset                 	                : in    std_logic; 
-            en                 	                    : in    std_logic; 
-            load               	                    : in    std_logic; 
-            data_in                               	: in    std_logic; 
-            WiMax_out_valid                         : out   std_logic;
-            data_out1                              	: out   std_logic_vector(15 downto 0);
-            data_out2                              	: out   std_logic_vector(15 downto 0) 
+            clk_50mhz                             : in    std_logic; 
+            reset                 	              : in    std_logic; 
+            en                 	                  : in    std_logic; 
+            load               	                  : in    std_logic; 
+            data_in                               : in    std_logic; 
+            WiMax_out_valid                       : out   std_logic;
+            data_out1                             : out   std_logic_vector(15 downto 0);
+            data_out2                             : out   std_logic_vector(15 downto 0) 
         );
     end component;
 
@@ -36,9 +36,15 @@ architecture tb_arch of WiMax_tb is
     signal   test_out1_bit                        : std_logic_vector(15 downto 0) ;
     signal   test_out2_bit                        : std_logic_vector(15 downto 0) ;
     signal   out_valid                            : std_logic;
-    signal   xfkd                                 : std_logic := '0';
-begin 
 
+    --alias signals 
+    signal  rand_out_alias_signal                 : std_logic;
+    signal  rand_valid_alias_signal               : std_logic;
+    signal  fec_out_alias_signal                  : std_logic;
+    signal  fec_valid_alias_signal                : std_logic;
+    signal  int_out_alias_signal                  : std_logic;
+    signal  int_valid_alias_signal                : std_logic;
+begin 
     
     --instantiations 
     wm1: WiMax port map 
@@ -64,7 +70,7 @@ begin
         reset <= '0'; 
         wait for 2*CLK_50_HALF_PERIOD;
         load <= '1';    --take seed into module 
-        wait for CLK_50_PERIOD; --bec of 75 ns edge the next pos edge so make sure a pos edge came 
+        wait for 1.5*CLK_50_PERIOD; --bec of 75 ns edge the next pos edge so make sure a pos edge came 
         load <= '0'; 
         en <= '1'; 
         --Inputting steams 
@@ -150,27 +156,168 @@ begin
                 report "Demodulated vector is not equal to input 5 stream vector, test failed" severity error;   
 
         report END_SIMULATION_MSG;
-        xfkd <= '1';
         wait;
     end process;
 
-    --Handshakes Verification 
+    --------------------------------------------------------------Handshakes Verification-------------------------------------------------------------- 
+
+    --Randomizer
     process 
-        --aliases 
-        --rand
-        alias rand_out_alias    is <<signal .WiMax_tb.wm1.rand_out                  : std_logic>>;
-        alias rand_valid_alias  is <<signal .WiMax_tb.wm1.rand_out_valid            : std_logic>>;
-        --fec
-        alias fec_out_alias     is <<signal .WiMax_tb.wm1.fec_out                   : std_logic>>;
-        alias fec_valid_alias   is <<signal .WiMax_tb.wm1.FEC_encoder_out_valid_out : std_logic>>;
-        --interleaver   
-        alias int_out_alias     is <<signal .WiMax_tb.wm1.interleaver_out           : std_logic>>;
-        alias int_valid_alias   is <<signal .WiMax_tb.wm1.interleaver_out_valid     : std_logic>>;
-        
+        variable test_pass_randomizer: boolean := true;
+        procedure checker_randomizer is 
+            begin 
+            for i in 95 downto 0 loop 
+                if (rand_out_alias_signal /= OUTPUT_RANDOMIZER_VECTOR_CONST(i)) then 
+                    report "Bit " & integer'image(i) & " is wrong, test failed" severity error; 
+                    report "it is " & std_logic'image(rand_out_alias_signal) & " and it supposed to be: " & std_logic'image(OUTPUT_RANDOMIZER_VECTOR_CONST(i)) severity error;     
+                    test_pass_randomizer := false;                                      
+                end if;
+            wait for CLK_50_PERIOD;
+            end loop; 
+        end checker_randomizer;
     begin 
-        wait until rand_valid_alias = '1'; 
-        wait for 2 ns;
-        report "value of rand out: "& std_logic'image(rand_out_alias);
+        wait for 1 ns;
+        wait until rand_valid_alias_signal = '1'; 
+        wait for 5 ns;
+        report "========================================================================================================";
+        report "------------------------------------STARTED HANDSHAKES SELF CHECKER--------------------------";
+        report "========================================================================================================";        
+        report "-------------------Started handshake self checker for: Randomizer Block--------------------------";
+        report "Randomizer stream 1: ";
+        checker_randomizer;
+        if (test_pass_randomizer = true) then 
+            report "Randomizer stream 1 test passed successfully" ;
+        end if;
+        report "Randomizer stream 2: ";
+        checker_randomizer;
+        if (test_pass_randomizer = true) then 
+            report "Randomizer stream 2 test passed successfully" ;
+        end if;
+        report "Randomizer stream 3: ";
+        checker_randomizer;
+        if (test_pass_randomizer = true) then 
+            report "Randomizer stream 3 test passed successfully" ;
+        end if;
+        report "Randomizer stream 4: ";
+        checker_randomizer;
+        if (test_pass_randomizer = true) then 
+            report "Randomizer stream 4 test passed successfully" ;
+        end if;
+        report "Randomizer stream 5: ";
+        checker_randomizer;
+        if (test_pass_randomizer = true) then 
+            report "Randomizer stream 5 test passed successfully" ;
+        end if;
+        report "-------------------Finished handshake self checker for: Randomizer Block--------------------------";
         wait;
     end process;
+
+    --FEC Enconder
+    process 
+        variable test_pass_fec_encoder: boolean := true;
+        procedure fec_checker is 
+        begin 
+        for i in 191 downto 0 loop 
+            if (fec_out_alias_signal /= INPUT_INTERLEAVER_VECTOR_CONST(i)) then 
+                report "Bit " & integer'image(i) & " is wrong, test failed" severity error; 
+                report "it is " & std_logic'image(fec_out_alias_signal) & " and it supposed to be: " & std_logic'image(INPUT_INTERLEAVER_VECTOR_CONST(i)) severity error;     
+                test_pass_fec_encoder := false;                                      
+            end if;
+        wait for CLK_100_PERIOD;
+        end loop; 
+        end fec_checker;
+    begin 
+        wait for 1 ns;
+        wait until fec_valid_alias_signal = '1'; 
+        wait for 5 ns;
+        report "-------------------Started handshake self checker for: FEC Encoder Block--------------------------";
+        report "FEC stream 1: ";
+        fec_checker;
+        if (test_pass_fec_encoder = true) then 
+            report "FEC Encoder stream 1 test passed successfully" ;
+        end if;
+        report "FEC stream 2: ";
+        fec_checker;
+        if (test_pass_fec_encoder = true) then 
+            report "FEC Encoder stream 2 test passed successfully" ;
+        end if;
+        report "FEC stream 3: ";
+        fec_checker;
+        if (test_pass_fec_encoder = true) then 
+            report "FEC Encoder stream 3 test passed successfully" ;
+        end if;
+        report "FEC stream 4: ";
+        fec_checker;
+        if (test_pass_fec_encoder = true) then 
+            report "FEC Encoder stream 4 test passed successfully" ;
+        end if;
+        report "FEC stream 5: ";
+        fec_checker;
+        if (test_pass_fec_encoder = true) then 
+            report "FEC Encoder stream 5 test passed successfully" ;
+        end if;
+        report "-------------------Finished handshake self checker for: FEC Encoder Block--------------------------";
+        wait;
+    end process;
+
+    --Interleaver
+    process 
+        variable test_pass_interleaver: boolean := true;
+        procedure interleaver_checker is 
+        begin 
+        for i in 191 downto 0 loop 
+            if (int_out_alias_signal /= INPUT_MODULATION_VECTOR_CONST(i)) then 
+                report "Bit " & integer'image(i) & " is wrong, test failed" severity error; 
+                report "it is " & std_logic'image(int_out_alias_signal) & " and it supposed to be: " & std_logic'image(INPUT_MODULATION_VECTOR_CONST(i)) severity error;     
+                test_pass_interleaver := false;                                      
+            end if;
+        wait for CLK_100_PERIOD;
+        end loop;
+        end interleaver_checker;
+    begin 
+        wait for 1 ns;
+        wait until int_valid_alias_signal = '1'; 
+        wait for 5 ns;
+        report "-------------------Started handshake self checker for: Interleaver Block--------------------------";
+        report "Interleaver stream 1: ";
+        interleaver_checker;
+        if (test_pass_interleaver = true) then 
+            report "Interleaver stream 1 test passed successfully" ;
+        end if;
+        report "Interleaver stream 2: ";
+        interleaver_checker;
+        if (test_pass_interleaver = true) then 
+            report "Interleaver stream 2 test passed successfully" ;
+        end if;
+        report "Interleaver stream 3: ";
+        interleaver_checker;
+        if (test_pass_interleaver = true) then 
+            report "Interleaver stream 3 test passed successfully" ;
+        end if;
+        report "Interleaver stream 4: ";
+        interleaver_checker;
+        if (test_pass_interleaver = true) then 
+            report "Interleaver stream 4 test passed successfully" ;
+        end if;
+        report "Interleaver stream 5: ";
+        interleaver_checker;
+        if (test_pass_interleaver = true) then 
+            report "Interleaver stream 5 test passed successfully" ;
+        end if;
+        report "-------------------Finished handshake self checker for: Interleaver Block--------------------------";
+        report "========================================================================================================";
+        report "------------------------------------FINISHED HANDSHAKES SELF CHECKER--------------------------";
+        report "========================================================================================================";
+        wait;
+    end process;
+
+    --alias assignments 
+    rand_out_alias_signal   <= <<signal .WiMax_tb.wm1.rand1.rand_out            : std_logic>>; 
+    rand_valid_alias_signal <= <<signal .WiMax_tb.wm1.rand1.rand_out_valid      : std_logic>>; 
+    fec_out_alias_signal    <= <<signal .WiMax_tb.wm1.fec_out                   : std_logic>>;  
+    fec_valid_alias_signal  <= <<signal .WiMax_tb.wm1.FEC_encoder_out_valid_out : std_logic>>;
+    int_out_alias_signal    <= <<signal .WiMax_tb.wm1.interleaver_out           : std_logic>>; 
+    int_valid_alias_signal  <= <<signal .WiMax_tb.wm1.interleaver_out_valid     : std_logic>>;
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 end tb_arch;
