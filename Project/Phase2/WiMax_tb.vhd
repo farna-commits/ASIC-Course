@@ -38,6 +38,8 @@ architecture tb_arch of WiMax_tb is
     signal   out_valid                            : std_logic;
     signal   xfkd                                 : std_logic := '0';
 begin 
+
+    
     --instantiations 
     wm1: WiMax port map 
     (
@@ -149,6 +151,26 @@ begin
 
         report END_SIMULATION_MSG;
         xfkd <= '1';
+        wait;
+    end process;
+
+    --Handshakes Verification 
+    process 
+        --aliases 
+        --rand
+        alias rand_out_alias    is <<signal .WiMax_tb.wm1.rand_out                  : std_logic>>;
+        alias rand_valid_alias  is <<signal .WiMax_tb.wm1.rand_out_valid            : std_logic>>;
+        --fec
+        alias fec_out_alias     is <<signal .WiMax_tb.wm1.fec_out                   : std_logic>>;
+        alias fec_valid_alias   is <<signal .WiMax_tb.wm1.FEC_encoder_out_valid_out : std_logic>>;
+        --interleaver   
+        alias int_out_alias     is <<signal .WiMax_tb.wm1.interleaver_out           : std_logic>>;
+        alias int_valid_alias   is <<signal .WiMax_tb.wm1.interleaver_out_valid     : std_logic>>;
+        
+    begin 
+        wait until rand_valid_alias = '1'; 
+        wait for 2 ns;
+        report "value of rand out: "& std_logic'image(rand_out_alias);
         wait;
     end process;
 end tb_arch;
