@@ -136,8 +136,9 @@ begin
                 data_in_signal_bit <= rand_in_data_rom(counter_rand); 
                 counter_rand <= counter_rand - 1; 
             elsif (load = '0' and counter_rand = 0 and en = '1') then 
-                en_signal <= '1';
-                data_in_signal_bit <= rand_in_data_rom(counter_rand); 
+                en_signal           <= '1';
+                data_in_signal_bit  <= rand_in_data_rom(counter_rand); 
+                counter_rand        <= 95;
             end if; 
         end if; 
     end process;
@@ -154,10 +155,13 @@ begin
                     rand_pass <= '1';
                     counter2_rand <= counter2_rand - 1; 
                 else 
-                    flag_rand <= '1'; 
-                    rand_pass <= '0'; 
+                    flag_rand       <= '1'; 
+                    rand_pass       <= '0';                     
                 end if;
             end if; 
+            if(counter2_rand = 0) then 
+                counter2_rand   <= 95;
+            end if;
         end if; 
     end process; 
 
@@ -178,6 +182,9 @@ begin
                         fec_pass    <= '0';
                     end if;
                 end if;
+                if (counter_fec = 0) then 
+                    counter_fec <= 191;
+                end if;
             end if;
         end if;
     end process;
@@ -196,8 +203,11 @@ begin
                         counter_int <= counter_int - 1;
                     else 
                         flag_int    <= '1';
-                        int_pass    <= '0';
+                        int_pass    <= '0';                        
                     end if;
+                end if;
+                if (counter_int = 0) then 
+                    counter_int <= 191;
                 end if;
             end if;
         end if;
@@ -224,6 +234,9 @@ begin
                         flag_mod    <= '1';
                         mod_pass    <= '0';
                     end if;
+                end if;
+                if (counter_mod = 1) then 
+                    counter_mod <= 191;
                 end if;
             end if;
         end if;
