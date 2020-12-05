@@ -58,6 +58,9 @@ architecture WiMax_verifier_arch of WiMax_verifier is
     signal rand_in_data_rom                       : std_logic_vector(95 downto 0)   := INPUT_RANDOMIZER_VECTOR_CONST; 
     signal rand_out_data_rom                      : std_logic_vector(95 downto 0)   := OUTPUT_RANDOMIZER_VECTOR_CONST;
     signal fec_out_data_rom                       : std_logic_vector(191 downto 0)  := INPUT_INTERLEAVER_VECTOR_CONST;
+    signal int_out_data_rom                       : std_logic_vector(191 downto 0)  := INPUT_MODULATION_VECTOR_CONST;
+    signal mod_out_data_rom                       : std_logic_vector(191 downto 0)  := INPUT_MODULATION_VECTOR_CONST;
+    
     
     --PLL
     signal clk_50mhz_sig                          : std_logic;
@@ -75,15 +78,19 @@ architecture WiMax_verifier_arch of WiMax_verifier is
     --fec
     signal fec_out                                : std_logic;
     signal fec_out_valid                          : std_logic;
-    signal counter_fec, counter2_fec              : integer;
+    signal counter_fec                            : integer;
     signal flag_fec                               : std_logic; 
     --int
     signal int_out                                : std_logic;
     signal int_out_valid                          : std_logic;
+    signal counter_int                            : integer;
+    signal flag_int                               : std_logic; 
     --mod
     signal mod_out1                               : std_logic_vector(15 downto 0);
     signal mod_out2                               : std_logic_vector(15 downto 0);
     signal mod_out_valid                          : std_logic;
+    signal counter_mod                            : integer;
+    signal flag_mod                               : std_logic; 
 
 
 begin 
@@ -162,12 +169,61 @@ begin
             flag_fec    <= '0';      
         elsif(rising_edge(clk_100mhz_sig)) then 
             if(fec_out_valid = '1') then 
-                if(fec_out = fec_out_data_rom(counter_fec) and flag_fec = '0') then 
-                    fec_pass    <= '1';
-                    counter_fec <= counter_fec - 1;
-                else 
-                    flag_fec    <= '1';
-                    fec_pass    <= '0';
+                if(counter_fec >= 0) then 
+                    if(fec_out = fec_out_data_rom(counter_fec) and flag_fec = '0') then 
+                        fec_pass    <= '1';
+                        counter_fec <= counter_fec - 1;
+                    else 
+                        flag_fec    <= '1';
+                        fec_pass    <= '0';
+                    end if;
+                end if;
+            end if;
+        end if;
+    end process;
+
+    --int
+    process (clk_100mhz_sig, reset) begin 
+        if(reset = '1') then 
+            int_pass    <= '0';
+            counter_int <= 191;  
+            flag_int    <= '0';      
+        elsif(rising_edge(clk_100mhz_sig)) then 
+            if(int_out_valid = '1') then 
+                if(counter_int >= 0) then 
+                    if(int_out = int_out_data_rom(counter_int) and flag_int = '0') then 
+                        int_pass    <= '1';
+                        counter_int <= counter_int - 1;
+                    else 
+                        flag_int    <= '1';
+                        int_pass    <= '0';
+                    end if;
+                end if;
+            end if;
+        end if;
+    end process;
+
+    --mod
+    process (clk_50mhz_sig, reset) begin 
+        if(reset = '1') then 
+            mod_pass    <= '0';
+            counter_mod <= 191;  
+            flag_mod    <= '0';      
+        elsif(rising_edge(clk_50mhz_sig)) then 
+            if(mod_out_valid = '1') then 
+                if(counter_mod >= 1) then 
+                    if(mod_out1(15) = mod_out_data_rom(counter_mod) and mod_out2(15) = mod_out_data_rom(counter_mod-1) and flag_mod = '0') then 
+                        mod_pass    <= '1';
+                        if(counter_mod > 1) then 
+                            counter_mod <= counter_mod - 2;
+                        end if;
+                        if (counter_mod = 1) then
+                           counter_mod  <= counter_mod - 1;         
+                        end if;
+                    else 
+                        flag_mod    <= '1';
+                        mod_pass    <= '0';
+                    end if;
                 end if;
             end if;
         end if;
