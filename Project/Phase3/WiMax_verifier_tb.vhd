@@ -1,3 +1,4 @@
+-- vcom -reportprogress 300 -2008 -work work D:/AUC/Semester9(Fall2020)/ASIC/repo/ASIC-Course/Project/Phase3/WiMax_verifier_tb.vhd 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
@@ -31,8 +32,18 @@ architecture tb_arch of WiMax_verifier_tb is
     signal   int_led                              : std_logic;
     signal   mod_led                              : std_logic;
 
+    signal   rand_valid_alias_signal              : std_logic;
+    signal   fec_valid_alias_signal               : std_logic;
+    signal   int_valid_alias_signal               : std_logic;
+    signal   mod_valid_alias_signal               : std_logic;
     
 begin 
+
+    rand_valid_alias_signal <= <<signal .WiMax_verifier_tb.uut.rand_out_valid : std_logic>>; 
+    fec_valid_alias_signal  <= <<signal .WiMax_verifier_tb.uut.fec_out_valid  : std_logic>>;
+    int_valid_alias_signal  <= <<signal .WiMax_verifier_tb.uut.int_out_valid  : std_logic>>;
+    mod_valid_alias_signal  <= <<signal .WiMax_verifier_tb.uut.mod_out_valid  : std_logic>>;
+
 
     --instantiations
     uut: WiMax_verifier port map
@@ -61,9 +72,83 @@ begin
         wait for 1*CLK_50_PERIOD; --bec of 75 ns edge the next pos edge so make sure a pos edge came 
         load <= '0'; 
         en <= '1';        
-        wait for 1920 ns; 
-        en  <= '0';
         wait; --makes process executes once 
     end process;
 
+    --verifiers 
+    --rand
+    process
+    variable rand_test_pass: boolean;
+    begin
+        wait for 1 ns;
+        wait until rand_valid_alias_signal = '1'; 
+        wait for CLK_50_PERIOD;
+        wait for 1 ns;
+        if (rand_led = '1') then 
+            rand_test_pass := true;
+        else
+            rand_test_pass := false;
+        end if;
+        -- error reporting
+        assert rand_test_pass
+        report "Randomizer test failed" severity failure;        
+        wait for CLK_50_PERIOD; 
+    end process;
+
+    --fec
+    process
+    variable fec_test_pass: boolean;
+    begin
+        wait for 1 ns;
+        wait until fec_valid_alias_signal = '1'; 
+        wait for CLK_100_PERIOD;
+        wait for 1 ns;
+        if (fec_led = '1') then 
+            fec_test_pass := true;
+        else
+            fec_test_pass := false;
+        end if;
+        -- error reporting
+        assert fec_test_pass
+        report "FEC test failed" severity failure;        
+        wait for CLK_100_PERIOD; 
+    end process;
+
+    --int
+    process
+    variable int_test_pass: boolean;
+    begin
+        wait for 1 ns;
+        wait until int_valid_alias_signal = '1'; 
+        wait for CLK_100_PERIOD;
+        wait for 1 ns;
+        if (int_led = '1') then 
+            int_test_pass := true;
+        else
+            int_test_pass := false;
+        end if;
+        -- error reporting
+        assert int_test_pass
+        report "Interleaver test failed" severity failure;        
+        wait for CLK_100_PERIOD; 
+    end process;
+
+    --mod
+    process
+    variable mod_test_pass: boolean;
+    begin
+        wait for 1 ns;
+        wait until mod_valid_alias_signal = '1'; 
+        wait for CLK_50_PERIOD;
+        wait for 1 ns;
+        if (mod_led = '1') then 
+            mod_test_pass := true;
+        else
+            mod_test_pass := false;
+        end if;
+        -- error reporting
+        assert mod_test_pass
+        report "Modulation test failed" severity failure;        
+        wait for CLK_50_PERIOD; 
+    end process;
 end tb_arch;
