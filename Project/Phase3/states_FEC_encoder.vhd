@@ -101,9 +101,11 @@ begin
         if (reset = '1') then 
             counter_buffer_input        <= 0;
             shift_reg                   <= (others => '0');
+            shift_reg2                  <= (others => '0');
             counter_shift_and_output    <= 0;
             finished_tail_flag			<= '0';
             PingPong_flag               <= '0';
+            input_state_reg             <= idle;
         elsif (rising_edge(clk_50mhz)) then 
             input_state_reg<=input_state_reg;
             case input_state_reg is 

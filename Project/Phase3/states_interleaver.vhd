@@ -99,6 +99,7 @@ begin
             counter_out                 <=  0; 
             interleaver_out_valid       <= '0';
             PingPong_flag               <= '0';
+            state_reg                   <= idle;
         elsif(rising_edge(clk_100mhz)) then 
             case state_reg is 
                 when idle =>      
