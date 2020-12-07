@@ -35,7 +35,8 @@ begin
     process (clk_50mhz, reset) begin 
         --initialize 
         if (reset = '1') then --my reset is active high
-            seed_reg            <= (others => '0');    --init with zeros 
+            -- seed_reg            <= (others => '0');    --init with zeros 
+            seed_reg    <= seed_reg2;
             counter_reset_seed  <= 0;
         elsif (rising_edge(clk_50mhz)) then 
         -- if reset is high then operate, but check enable and load first 
