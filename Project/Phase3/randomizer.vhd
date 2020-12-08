@@ -40,9 +40,9 @@ begin
             counter_reset_seed  <= 0;
         elsif (rising_edge(clk_50mhz)) then 
         -- if reset is high then operate, but check enable and load first 
-            if(load = '1') then
-                seed_reg <= seed_reg2;    --initialize the seed reg with input seed
-            elsif(rand_in_ready = '1') then
+            -- if(load = '1') then
+            --     seed_reg <= seed_reg2;    --initialize the seed reg with input seed
+            if(rand_in_ready = '1') then
                 seed_reg            <= seed_reg(SEED_WIDTH-2 downto 0) & xor_1;    --shift left by 1 and xor with xoring result of last 2 bits
                 counter_reset_seed  <= counter_reset_seed + 1;
                 if (counter_reset_seed = 95) then 
