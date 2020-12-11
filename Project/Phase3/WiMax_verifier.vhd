@@ -150,7 +150,7 @@ begin
             flag_rand <= '0';
             rand_pass <= '0';            
         elsif (rising_edge(clk_50mhz_sig)) then 
-            if (load = '0' and counter2_rand > 0 and counter2_rand <= 95 and en_signal = '1') then
+            if (load = '0' and counter2_rand >= 0 and counter2_rand <= 95 and en_signal = '1') then
                 if ((rand_out = rand_out_data_rom(counter2_rand)) and (flag_rand = '0')) then 
                     rand_pass <= '1';
                     counter2_rand <= counter2_rand - 1; 
